@@ -13,7 +13,7 @@ A personal SvelteKit web app with a SQLite backend for tracking and analyzing ho
 - **Frontend**: SvelteKit (latest stable, SvelteKit 2 / Svelte 5)
 - **Data loading**: SvelteKit server load functions (`+page.server.ts`)
 - **Database**: SQLite via Drizzle ORM with `better-sqlite3` driver
-- **Charts**: Chart.js with `svelte-chartjs`
+- **Charts**: LayerChart (Svelte-native charting library)
 - **UI components**: shadcn-svelte (Tailwind-based component library)
 - **Styling**: Tailwind CSS
 
@@ -97,14 +97,15 @@ Datum	El kWh
 
 ## Consistent View Architecture
 
-All four time-scale views (daily, weekly, monthly, yearly) follow the **same structural pattern**:
+All three time-scale views (weekly, monthly, yearly) follow the **same structural pattern**:
+
+**Note**: The daily view was skipped because we have daily totals (not hourly data), so showing a single value per day isn't useful. Weekly view is the primary analysis page.
 
 ### Shared Structure Per View
 
 1. **Period selector** — pick the specific period to view (date picker, week picker, month picker, year picker)
 2. **Navigation arrows** — previous/next period
 3. **Main chart** — bar chart showing consumption broken down by the sub-unit:
-   - Daily → 24 hourly bars
    - Weekly → 7 daily bars (Mon–Sun)
    - Monthly → daily bars (1–28/31)
    - Yearly → 12 monthly bars (Jan–Dec)
@@ -122,7 +123,6 @@ All four time-scale views (daily, weekly, monthly, yearly) follow the **same str
 
 | View    | Rolling average                                       |
 | ------- | ----------------------------------------------------- |
-| Daily   | Average daily total over the last 7 complete days     |
 | Weekly  | Average weekly total over the last 4 complete weeks   |
 | Monthly | Average monthly total over the last 3 complete months |
 | Yearly  | Average yearly total over all complete previous years |
@@ -143,15 +143,7 @@ A simple landing page with navigation to all sections. Can optionally show a com
 - Show the date range of the imported data
 - Optionally show a preview of the first ~10 parsed rows before confirming (can be a progressive enhancement)
 
-### 3. `/daily` — Daily Analysis
-
-- Period selector: date picker (shadcn-svelte DatePicker)
-- Chart: hourly bar chart (hours 0–23)
-- Comparison: overlay another day
-- Stats card with all standard metrics
-- URL param: `?date=2026-02-04` (defaults to most recent day with data)
-
-### 4. `/weekly` — Weekly Analysis
+### 3. `/weekly` — Weekly Analysis (Primary View)
 
 - Period selector: week picker (year + ISO week number)
 - Chart: daily bar chart (Mon–Sun)
@@ -159,7 +151,7 @@ A simple landing page with navigation to all sections. Can optionally show a com
 - Stats card with all standard metrics
 - URL param: `?year=2026&week=6`
 
-### 5. `/monthly` — Monthly Analysis
+### 4. `/monthly` — Monthly Analysis
 
 - Period selector: month picker (year + month)
 - Chart: daily bar chart across the month
@@ -167,7 +159,7 @@ A simple landing page with navigation to all sections. Can optionally show a com
 - Stats card with all standard metrics + projection if current month
 - URL param: `?year=2026&month=2&compare_year=2026&compare_month=1`
 
-### 6. `/yearly` — Yearly Analysis
+### 5. `/yearly` — Yearly Analysis
 
 - Period selector: year picker
 - Chart: monthly bar chart (Jan–Dec)
@@ -175,16 +167,16 @@ A simple landing page with navigation to all sections. Can optionally show a com
 - Stats card with all standard metrics + projection if current year
 - URL param: `?year=2026&compare=2025`
 
-### 7. `/patterns` — Consumption Patterns
+### 6. `/patterns` — Consumption Patterns
 
 Multiple analysis sections on one page:
 
 - **Day-of-week pattern**: Average consumption by day of week (Mon–Sun), aggregated across all data. Bar chart.
-- **Hour-of-day pattern**: Average consumption by hour (0–23), aggregated across all data. Line or bar chart.
+- **Hour-of-day pattern**: *(Skip this — we don't have hourly data, only daily totals)*
 - **Month-of-year pattern**: Average total monthly consumption by month. Bar chart (grows more useful as data accumulates).
 - **Heatmap**: Calendar-style heatmap showing daily total consumption, color-coded from low to high. Shows a selectable date range (default: last 3 months).
 
-### 8. `/targets` — Target Management
+### 7. `/targets` — Target Management
 
 - Forms to set/update targets for each period type (daily, weekly, monthly, yearly)
 - Uses form actions for create/update
@@ -386,7 +378,7 @@ interface StatsProps {
 
 ### Target Display on Charts
 
-- Render the active target as a **horizontal dashed line** on the main chart using Chart.js annotation plugin (`chartjs-plugin-annotation`)
+- Render the active target as a **horizontal reference line** on the main chart using LayerChart's built-in reference line features
 - Color the total in the stats card: green if under target, red if over
 
 ### Comparison Overlay
@@ -398,7 +390,7 @@ interface StatsProps {
 
 ### Heatmap on Patterns Page
 
-Chart.js doesn't natively support calendar heatmaps. Build a **custom Svelte component using CSS grid** — simpler than a canvas approach and gives full control over styling with Tailwind.
+Build a **custom Svelte component using CSS grid** — simpler than a canvas approach and gives full control over styling with Tailwind.
 
 The heatmap should look like a GitHub contribution graph: a grid of small colored squares, one per day, arranged in columns by week. Color scale from light (low consumption) to dark (high consumption).
 
@@ -417,18 +409,17 @@ The `+page.server.ts` load functions read from `url.searchParams`. Period naviga
 
 ## Implementation Order (Suggested)
 
-1. **Database layer**: Drizzle schema, connection, run initial migration
-2. **CSV parser**: `csv-parser.ts` utility with tests against the known format
-3. **Import page**: File upload form action + results display
-4. **Daily view**: Hourly chart + stats card + period navigation
-5. **Weekly view**: Reuse chart/stats components with weekly aggregation
-6. **Monthly view**: Same pattern, monthly aggregation + projection
-7. **Yearly view**: Same pattern, yearly aggregation + projection
-8. **Comparison overlays**: Add comparison selector and overlay to all four views
-9. **Targets page**: CRUD for targets + form actions
-10. **Target integration**: Add target lines and indicators to all view stats cards/charts
-11. **Patterns page**: Day-of-week, hour-of-day, month-of-year charts + heatmap
-12. **Polish**: Loading states, empty states, error handling, responsive layout
+1. **Database layer**: Drizzle schema, connection, run initial migration ✅
+2. **CSV parser**: `csv-parser.ts` utility with tests against the known format ✅
+3. **Import page**: File upload form action + results display ✅
+4. **Weekly view**: Bar chart + stats card + period navigation (PRIMARY VIEW)
+5. **Monthly view**: Reuse chart/stats components with monthly aggregation + projection
+6. **Yearly view**: Same pattern, yearly aggregation + projection
+7. **Comparison overlays**: Add comparison selector and overlay to all three views
+8. **Targets page**: CRUD for targets + form actions
+9. **Target integration**: Add target lines and indicators to all view stats cards/charts
+10. **Patterns page**: Day-of-week, month-of-year charts + heatmap
+11. **Polish**: Loading states, empty states, error handling, responsive layout
 
 ---
 

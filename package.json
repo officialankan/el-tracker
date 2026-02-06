@@ -55,6 +55,8 @@
 		"vitest": "^4.0.18"
 	},
 	"dependencies": {
-		"better-sqlite3": "^12.6.2"
+		"better-sqlite3": "^12.6.2",
+		"date-fns": "^4.1.0",
+		"layerchart": "^1.0.13"
 	}
 }
