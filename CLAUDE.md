@@ -11,8 +11,8 @@ Electricity Consumption Tracker — a local-only SvelteKit app for importing, an
 - **SvelteKit 2 / Svelte 5** with TypeScript (strict mode)
 - **SQLite** via Drizzle ORM + better-sqlite3
 - **Tailwind CSS 4** (Vite plugin, not PostCSS)
-- **shadcn-svelte** for UI components (installed via `npx shadcn-svelte@latest add <component>`)
-- **Chart.js + svelte-chartjs** for data visualization (planned, not yet in dependencies)
+- **shadcn-svelte** for UI components (installed via `pnpm dlx shadcn-svelte@latest add <component>`)
+- **LayerChart** for data visualization (Svelte-native charting library with custom Tailwind-styled tooltips)
 - **pnpm** as package manager
 
 ## Commands
@@ -48,6 +48,7 @@ All data fetching uses SvelteKit server load functions (`+page.server.ts`). No s
 ### Routing
 
 Eight planned routes following SvelteKit file-based routing under `src/routes/`:
+
 - `/` — Home/dashboard
 - `/import` — CSV file upload (form action)
 - `/daily`, `/weekly`, `/monthly`, `/yearly` — Analysis views with bar charts, stats cards, comparison overlays, and target indicators
@@ -72,13 +73,24 @@ All four analysis views (daily/weekly/monthly/yearly) share the same structural 
 - Prettier plugins: `prettier-plugin-svelte` + `prettier-plugin-tailwindcss` (auto-sorts Tailwind classes)
 - ESLint: flat config (ESLint 9+) with TypeScript project service and Svelte plugin
 
+### Code Quality Checks
+
+**IMPORTANT**: After completing any work that modifies code, always run:
+
+1. `pnpm format` — Auto-format all code with Prettier
+2. `pnpm lint` — Check for ESLint violations
+
+These commands ensure consistent code style and catch common issues before committing.
+
 ## CSV Import Format
 
 The source data is tab-separated with Swedish formatting:
+
 ```
 Datum	El kWh
 2026-02-04 00:00 (ons)	4,472
 ```
+
 - Parse first 16 chars of timestamp, ignore day abbreviation in parens
 - Replace comma with dot for decimal values
 - Store as ISO 8601 (`2026-02-04T00:00:00`), local Swedish time
@@ -87,6 +99,7 @@ Datum	El kWh
 ## Svelte MCP Server
 
 When developing Svelte code, use the Svelte MCP tools:
+
 1. `list-sections` — discover documentation sections (use FIRST)
 2. `get-documentation` — fetch relevant docs based on use_cases
 3. `svelte-autofixer` — validate Svelte code before delivering (MUST use, repeat until clean)

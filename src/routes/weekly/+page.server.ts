@@ -39,15 +39,17 @@ export const load: PageServerLoad = async ({ url }) => {
 		dataMap.set(date, row.kwh);
 	});
 
-	// Build array of daily values (0 if no data)
-	const dailyValues = weekDates.map((date) => dataMap.get(date) ?? 0);
+	// Build array of daily values (null if no data)
+	const dailyValues = weekDates.map((date) => dataMap.get(date) ?? null);
 
-	// Calculate stats
-	const total = dailyValues.reduce((sum, val) => sum + val, 0);
-	const average = total / 7;
+	// Calculate stats (filter out nulls)
+	const validValues = dailyValues.filter((v) => v !== null) as number[];
+	const total = validValues.reduce((sum, val) => sum + val, 0);
+	const average = validValues.length > 0 ? total / validValues.length : 0;
+	const maxValue = validValues.length > 0 ? Math.max(...validValues) : 0;
 	const peakDay = {
-		index: dailyValues.indexOf(Math.max(...dailyValues)),
-		value: Math.max(...dailyValues)
+		index: dailyValues.indexOf(maxValue),
+		value: maxValue
 	};
 
 	// Calculate rolling 4-week average (excluding current week)
@@ -81,7 +83,18 @@ export const load: PageServerLoad = async ({ url }) => {
 				gte(consumption.timestamp, `${prevWeekDates[0]}T00:00:00`),
 				lte(consumption.timestamp, `${prevWeekDates[6]}T23:59:59`)
 			)
-		);
+		)
+		.orderBy(consumption.timestamp);
+
+	// Create a map of date -> kWh for previous week
+	const prevDataMap = new Map<string, number>();
+	prevWeekData.forEach((row) => {
+		const date = row.timestamp.split("T")[0];
+		prevDataMap.set(date, row.kwh);
+	});
+
+	// Build array of daily values for previous week (null if no data)
+	const prevDailyValues = prevWeekDates.map((date) => prevDataMap.get(date) ?? null);
 
 	const previousTotal = prevWeekData.reduce((sum, row) => sum + row.kwh, 0);
 	const percentChange = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
@@ -95,6 +108,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		week,
 		weekDates,
 		dailyValues,
+		prevDailyValues,
 		stats: {
 			total,
 			average,

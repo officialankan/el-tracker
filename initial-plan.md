@@ -172,7 +172,7 @@ A simple landing page with navigation to all sections. Can optionally show a com
 Multiple analysis sections on one page:
 
 - **Day-of-week pattern**: Average consumption by day of week (Mon–Sun), aggregated across all data. Bar chart.
-- **Hour-of-day pattern**: *(Skip this — we don't have hourly data, only daily totals)*
+- **Hour-of-day pattern**: _(Skip this — we don't have hourly data, only daily totals)_
 - **Month-of-year pattern**: Average total monthly consumption by month. Bar chart (grows more useful as data accumulates).
 - **Heatmap**: Calendar-style heatmap showing daily total consumption, color-coded from low to high. Shows a selectable date range (default: last 3 months).
 
@@ -357,6 +357,73 @@ interface ChartProps {
 	xLabel?: string; // X-axis title
 	yLabel?: string; // Y-axis title (default: "kWh")
 }
+```
+
+### Chart Implementation Pattern (LayerChart 2.0)
+
+All charts follow this pattern established in the weekly view implementation:
+
+1. **Import LayerChart components**:
+
+```typescript
+import { Chart, Svg, Axis, Bars, Highlight, Tooltip } from "layerchart";
+```
+
+2. **Component structure**:
+
+```svelte
+<Chart
+  data={chartData}
+  x="label"
+  xScale={scaleBand().padding(0.4)}
+  y="value"
+  yDomain={[0, maxValue]}
+  yNice
+  padding={{...}}
+  tooltip={{ mode: "band" }}
+>
+  <Svg>
+    <Axis placement="left" grid={{style: "stroke: hsl(var(--border)); stroke-dasharray: 2"}} rule />
+    <Axis placement="bottom" rule />
+    <Bars radius={4} strokeWidth={1} class="fill-primary" />
+    <Highlight bar={{ strokeWidth: 1 }} />
+  </Svg>
+  <Tooltip.Root>
+    {#snippet children(data)}
+      <Tooltip.Header>{data.label}</Tooltip.Header>
+      <Tooltip.List>
+        <Tooltip.Item label="Consumption" value="{data.value.toFixed(2)} kWh" />
+      </Tooltip.List>
+    {/snippet}
+  </Tooltip.Root>
+</Chart>
+```
+
+- Import `scaleBand` from `d3-scale` and use `xScale={scaleBand().padding(0.4)}` for categorical x-axis
+- Separate y configuration: `y="value"`, `yDomain={[0, maxValue]}`, and `yNice` for nice ticks
+- Add `tooltip={{ mode: "band" }}` to enable tooltip mode
+- Use `Tooltip.Root`, `Tooltip.Header`, `Tooltip.List`, and `Tooltip.Item` components
+- Use `{#snippet children(data)}` instead of `let:data` (Svelte 5 requirement)
+- Add `<Highlight>` component for hover effects on bars
+- Add `rule` prop to axes for axis lines
+
+3. **Run validation**: Always run `mcp__svelte__svelte-autofixer` on chart components to catch reactivity issues and Svelte 5 pattern violations
+
+4. **Client-side rendering only**: LayerChart uses client-side Svelte runes that don't work during SSR. Wrap chart rendering in a browser check:
+
+```svelte
+<script lang="ts">
+	import { browser } from "$app/environment";
+	// ... other imports
+</script>
+
+{#if browser}
+	<!-- Chart goes here -->
+{:else}
+	<div class="flex h-[400px] w-full items-center justify-center bg-muted/20">
+		<p class="text-sm text-muted-foreground">Loading chart...</p>
+	</div>
+{/if}
 ```
 
 ### Reusable Stats Card

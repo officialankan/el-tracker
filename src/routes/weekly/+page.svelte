@@ -48,12 +48,22 @@
 			>
 				<ChevronRight class="h-4 w-4" />
 			</Button>
+
+			<Button variant="outline" href="/weekly" disabled={data.navigation.isCurrent}>
+				Current Week
+			</Button>
 		</div>
 	</div>
 
 	<div class="grid gap-6 lg:grid-cols-2">
 		<div class="lg:col-span-2">
-			<ConsumptionBarChart {labels} data={data.dailyValues} yLabel="Daily kWh" />
+			<ConsumptionBarChart
+				{labels}
+				data={data.dailyValues}
+				comparisonData={data.prevDailyValues}
+				comparisonLabel="Previous Week"
+				yLabel="This Week"
+			/>
 		</div>
 
 		<div class="lg:col-span-2">
