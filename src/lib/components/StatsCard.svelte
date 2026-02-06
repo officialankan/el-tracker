@@ -28,7 +28,9 @@
 		subUnitLabel
 	}: Props = $props();
 
-	const changeColor = $derived(percentChange && percentChange > 0 ? "text-red-600" : "text-green-600");
+	const changeColor = $derived(
+		percentChange && percentChange > 0 ? "text-red-600" : "text-green-600"
+	);
 	const targetColor = $derived(
 		target && total > target.value ? "text-red-600" : target ? "text-green-600" : ""
 	);

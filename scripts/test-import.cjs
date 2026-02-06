@@ -47,9 +47,7 @@ console.log("Parsed rows:", result.rows.length);
 let inserted = 0;
 let skipped = 0;
 
-const insertStmt = db.prepare(
-	"INSERT OR IGNORE INTO consumption (timestamp, kwh) VALUES (?, ?)"
-);
+const insertStmt = db.prepare("INSERT OR IGNORE INTO consumption (timestamp, kwh) VALUES (?, ?)");
 
 for (const row of result.rows) {
 	const info = insertStmt.run(row.timestamp, row.kwh);

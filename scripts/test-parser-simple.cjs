@@ -44,7 +44,9 @@ result.rows.slice(0, 3).forEach((row) => {
 });
 
 console.log("\nLast row:");
-console.log(`  ${result.rows[result.rows.length - 1].timestamp} → ${result.rows[result.rows.length - 1].kwh} kWh`);
+console.log(
+	`  ${result.rows[result.rows.length - 1].timestamp} → ${result.rows[result.rows.length - 1].kwh} kWh`
+);
 
 if (result.errors.length > 0) {
 	console.log("\n⚠ Errors:", result.errors.length);
