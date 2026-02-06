@@ -67,3 +67,56 @@ export function parseConsumptionCSV(csvText: string): ParseResult {
 
 	return { rows, errors };
 }
+
+/**
+ * Parses pasted electricity consumption text
+ * Format: tab-separated, date with day name suffix, Swedish decimals
+ * Example: 2026-02-02 (måndag)	101,895
+ */
+export function parsePastedConsumption(text: string): ParseResult {
+	const rows: ConsumptionRow[] = [];
+	const errors: Array<{ line: number; error: string }> = [];
+
+	const lines = text.split("\n").map((line) => line.trim());
+
+	// Skip header row and empty lines
+	for (let i = 1; i < lines.length; i++) {
+		const line = lines[i];
+		if (!line) continue;
+
+		try {
+			const fields = line.split("\t");
+
+			if (fields.length < 2) {
+				errors.push({ line: i + 1, error: "Invalid format: expected 2 tab-separated fields" });
+				continue;
+			}
+
+			// Extract YYYY-MM-DD from "2026-02-02 (måndag)"
+			const dateStr = fields[0].trim().substring(0, 10);
+
+			if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+				errors.push({ line: i + 1, error: `Invalid date format: ${dateStr}` });
+				continue;
+			}
+
+			// Convert Swedish decimal (comma) to dot and parse
+			const kwh = parseFloat(fields[1].trim().replace(",", "."));
+
+			if (isNaN(kwh)) {
+				errors.push({ line: i + 1, error: `Invalid kWh value: ${fields[1].trim()}` });
+				continue;
+			}
+
+			const timestamp = `${dateStr}T00:00:00`;
+			rows.push({ timestamp, kwh });
+		} catch (error) {
+			errors.push({
+				line: i + 1,
+				error: error instanceof Error ? error.message : "Unknown error"
+			});
+		}
+	}
+
+	return { rows, errors };
+}

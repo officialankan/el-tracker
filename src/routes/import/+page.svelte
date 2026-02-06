@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { enhance } from "$app/forms";
+	import { Textarea } from "$lib/components/ui/textarea";
 	import type { ActionData } from "./$types";
 
 	let { form }: { form: ActionData } = $props();
 	let uploading = $state(false);
+	let pasting = $state(false);
 
 	function formatDate(timestamp: string) {
 		return timestamp.split("T")[0];
@@ -14,6 +16,7 @@
 	<h1 class="mb-6 text-3xl font-bold">Import Consumption Data</h1>
 
 	<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+		<h2 class="mb-4 text-lg font-semibold">Upload CSV file</h2>
 		<form
 			method="POST"
 			action="?/upload"
@@ -50,6 +53,47 @@
 				class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 			>
 				{uploading ? "Uploading..." : "Upload"}
+			</button>
+		</form>
+	</div>
+
+	<div class="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+		<h2 class="mb-4 text-lg font-semibold">Paste data</h2>
+		<form
+			method="POST"
+			action="?/paste"
+			use:enhance={() => {
+				pasting = true;
+				return async ({ update }) => {
+					await update();
+					pasting = false;
+				};
+			}}
+		>
+			<div class="mb-4">
+				<label for="text" class="mb-2 block text-sm font-medium text-gray-700">
+					Paste consumption data
+				</label>
+				<Textarea
+					id="text"
+					name="text"
+					rows={8}
+					placeholder="Datum	El kWh
+2026-02-02 (måndag)	101,895"
+					required
+					disabled={pasting}
+				/>
+				<p class="mt-2 text-sm text-gray-500">
+					Paste tab-separated data with header row (e.g. from a spreadsheet)
+				</p>
+			</div>
+
+			<button
+				type="submit"
+				disabled={pasting}
+				class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+			>
+				{pasting ? "Importing..." : "Import"}
 			</button>
 		</form>
 	</div>
