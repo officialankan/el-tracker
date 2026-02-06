@@ -77,8 +77,8 @@
 				</div>
 
 				<div class="rounded-md bg-white p-4 shadow-sm">
-					<p class="text-sm text-gray-600">Skipped</p>
-					<p class="text-2xl font-bold text-yellow-600">{form.skipped}</p>
+					<p class="text-sm text-gray-600">Updated</p>
+					<p class="text-2xl font-bold text-yellow-600">{form.updated}</p>
 				</div>
 
 				<div class="rounded-md bg-white p-4 shadow-sm">

@@ -1,4 +1,5 @@
 import type { Actions } from "./$types";
+import { eq } from "drizzle-orm";
 import { db } from "$lib/server/db";
 import { consumption } from "$lib/server/db/schema";
 import { parseConsumptionCSV } from "$lib/utils/csv-parser";
@@ -22,25 +23,34 @@ export const actions = {
 			const parseResult = parseConsumptionCSV(text);
 
 			let inserted = 0;
-			let skipped = 0;
+			let updated = 0;
 			let errors = parseResult.errors.length;
 
-			// Insert rows into database
+			// Insert rows into database, replacing duplicates with newer data
 			for (const row of parseResult.rows) {
 				try {
-					const result = await db
+					const existing = await db
+						.select({ kwh: consumption.kwh })
+						.from(consumption)
+						.where(eq(consumption.timestamp, row.timestamp))
+						.get();
+
+					await db
 						.insert(consumption)
 						.values({
 							timestamp: row.timestamp,
 							kwh: row.kwh
 						})
-						.onConflictDoNothing()
+						.onConflictDoUpdate({
+							target: consumption.timestamp,
+							set: { kwh: row.kwh }
+						})
 						.run();
 
-					if (result.changes > 0) {
-						inserted++;
+					if (existing) {
+						updated++;
 					} else {
-						skipped++;
+						inserted++;
 					}
 				} catch (err) {
 					errors++;
@@ -61,7 +71,7 @@ export const actions = {
 			return {
 				success: true,
 				inserted,
-				skipped,
+				updated,
 				errors,
 				totalRows: parseResult.rows.length,
 				dateRange,
