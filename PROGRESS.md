@@ -112,11 +112,27 @@ Last updated: 2026-02-10
   - [x] URL params: `?year=X&compare=Y`
 - [x] Dynamic comparison labels (e.g., "Week 4, 2026" instead of always "Previous Week")
 
+### Phase 8: Targets Page ✅
+
+- [x] Installed shadcn-svelte components: input, label, select, table, separator
+- [x] Created `/targets` route with `+page.server.ts`
+  - [x] Load function: queries active target per period type (most recent `valid_from <= today`) and all targets for history
+  - [x] `create` action: validates periodType, kwhTarget, validFrom, inserts into DB
+  - [x] `delete` action: deletes target by id
+- [x] Created `+page.svelte` with full CRUD UI
+  - [x] Header with Target lucide icon
+  - [x] 2x2 active targets card grid (daily/weekly/monthly/yearly) with kWh + valid from, or "No target set"
+  - [x] New target form with Select (period type), Input (kWh), date Input (valid from), using `use:enhance`
+  - [x] Target history table with period type, kWh, valid from, active/inactive badge, delete button
+- [x] Simplified NavBar: replaced hover-dropdown NavigationMenu with inline horizontal Button links
+  - [x] Active-page highlighting via `page.url.pathname`
+  - [x] Logo link to home page
+- [x] Added Targets card to home page
+
 ## Next Steps
 
 ### Remaining Phases
 
-8. Targets page
 9. Target integration
 10. Patterns page
 11. Polish & error handling
