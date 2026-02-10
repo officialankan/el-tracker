@@ -7,10 +7,13 @@ import {
 	getISOWeekYear,
 	startOfISOWeek,
 	addWeeks,
+	addMonths,
 	format,
 	parseISO,
 	eachDayOfInterval,
 	endOfISOWeek,
+	startOfMonth,
+	endOfMonth,
 	setISOWeek,
 	setYear
 } from "date-fns";
@@ -111,4 +114,53 @@ export function navigateWeek(
  */
 export function formatDayOfWeek(dateStr: string): string {
 	return format(parseISO(dateStr), "EEE");
+}
+
+// ── Month utilities ──────────────────────────────────────────────
+
+/**
+ * Get current month info
+ * @returns Current year and month (1-indexed)
+ */
+export function getCurrentMonth(): { year: number; month: number } {
+	const now = new Date();
+	return { year: now.getFullYear(), month: now.getMonth() + 1 };
+}
+
+/**
+ * Get date range for a month (all days)
+ * @param year Full year
+ * @param month Month 1-12
+ * @returns Array of ISO date strings (YYYY-MM-DD) for every day in the month
+ */
+export function getMonthDateRange(year: number, month: number): string[] {
+	const start = startOfMonth(new Date(year, month - 1));
+	const end = endOfMonth(start);
+	return eachDayOfInterval({ start, end }).map((date) => format(date, "yyyy-MM-dd"));
+}
+
+/**
+ * Navigate to previous/next month
+ * @param year Current year
+ * @param month Current month (1-12)
+ * @param direction 1 for next, -1 for previous
+ * @returns New year and month
+ */
+export function navigateMonth(
+	year: number,
+	month: number,
+	direction: 1 | -1
+): { year: number; month: number } {
+	const date = addMonths(new Date(year, month - 1), direction);
+	return { year: date.getFullYear(), month: date.getMonth() + 1 };
+}
+
+/**
+ * Format a month label
+ * @param year Full year
+ * @param month Month 1-12
+ * @returns Formatted string like "February 2026"
+ */
+export function formatMonthLabel(year: number, month: number): string {
+	return format(new Date(year, month - 1), "MMMM yyyy");
 }

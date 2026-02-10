@@ -5,8 +5,8 @@
 
 	interface Props {
 		labels: string[];
-		data: number[];
-		comparisonData?: number[];
+		data: (number | null)[];
+		comparisonData?: (number | null)[];
 		comparisonLabel?: string;
 		targetLine?: number;
 		xLabel?: string;
@@ -49,7 +49,7 @@
 			<Layer type="svg">
 				<Axis
 					placement="left"
-					grid={{ style: "stroke: hsl(var(--border)); stroke-dasharray: 2" }}
+					grid={{ style: "stroke: var(--border); stroke-dasharray: 2" }}
 					rule
 				/>
 				<Axis placement="bottom" rule />

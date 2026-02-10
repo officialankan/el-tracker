@@ -39,5 +39,18 @@
 				<Button href="/weekly" class="w-full">View Weekly</Button>
 			</Card.Content>
 		</Card.Root>
+
+		<Card.Root class="transition-shadow hover:shadow-md">
+			<Card.Header>
+				<div class="flex items-center gap-2">
+					<BarChart3 class="h-5 w-5" />
+					<Card.Title>Monthly Analysis</Card.Title>
+				</div>
+				<Card.Description>View monthly consumption patterns and trends</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				<Button href="/monthly" class="w-full">View Monthly</Button>
+			</Card.Content>
+		</Card.Root>
 	</div>
 </div>

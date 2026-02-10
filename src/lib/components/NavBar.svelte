@@ -17,6 +17,11 @@
 			title: "Analys - vecka",
 			href: "/weekly",
 			description: "Analys per vecka."
+		},
+		{
+			title: "Analys - månad",
+			href: "/monthly",
+			description: "Analys per månad."
 		}
 	];
 

@@ -62,23 +62,27 @@ Last updated: 2026-02-05
 - [x] All components validated with svelte-autofixer
 - [x] All tests passing (36 tests total)
 
+### Phase 5: Monthly View ✅
+
+- [x] Added month utility functions to `date-utils.ts` (getCurrentMonth, getMonthDateRange, navigateMonth, formatMonthLabel)
+- [x] Created `/monthly` route with `+page.server.ts` load function
+  - [x] Fetch monthly consumption data (daily values for all days in month)
+  - [x] Calculate stats (total, average, peak day)
+  - [x] Handle URL params for month selection (`?year=X&month=Y`)
+  - [x] Calculate rolling 3-month average (excluding current month)
+  - [x] Previous month comparison with daily breakdown and % change
+  - [x] Projection for incomplete months: `(total / daysWithData) * totalDaysInMonth`
+- [x] Reused `ConsumptionBarChart.svelte` and `StatsCard.svelte` components
+- [x] Added month navigation (prev/next arrows + "Current Month" button)
+- [x] Updated NavBar with monthly link
+- [x] Updated home page with monthly analysis card
+- [x] Fixed `ConsumptionBarChart` props to accept `(number | null)[]` (was `number[]`)
+
 ## Next Steps
-
-### Phase 5: Monthly View (Not Started)
-
-- [ ] Create `/monthly` route
-- [ ] Implement `+page.server.ts` load function
-  - [ ] Fetch monthly consumption data (daily values)
-  - [ ] Calculate stats (total, average, peak day)
-  - [ ] Handle URL params for month selection
-  - [ ] Calculate rolling 3-month average
-  - [ ] Add projection for current/incomplete month
-- [ ] Reuse `ConsumptionBarChart.svelte` and `StatsCard.svelte` components
-- [ ] Add month navigation and picker
 
 ### Remaining Phases
 
-6. Yearly view
+6. Yearly view (next)
 7. Comparison overlays (add to all three views)
 8. Targets page
 9. Target integration
