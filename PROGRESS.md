@@ -1,6 +1,6 @@
 # Implementation Progress
 
-Last updated: 2026-02-05
+Last updated: 2026-02-10
 
 ## Completed Phases ✅
 
@@ -78,11 +78,25 @@ Last updated: 2026-02-05
 - [x] Updated home page with monthly analysis card
 - [x] Fixed `ConsumptionBarChart` props to accept `(number | null)[]` (was `number[]`)
 
+### Phase 6: Yearly View ✅
+
+- [x] Added year utility functions to `date-utils.ts` (getCurrentYear, getYearMonths, formatShortMonth)
+- [x] Created `/yearly` route with `+page.server.ts` load function
+  - [x] Fetch yearly consumption data (monthly totals for all 12 months)
+  - [x] Calculate stats (total, average per month, peak month)
+  - [x] Handle URL params for year selection (`?year=X`)
+  - [x] Calculate rolling 3-year average (excluding current year)
+  - [x] Previous year comparison with monthly breakdown and % change
+  - [x] Projection for incomplete years: `(total / monthsWithData) * 12`
+- [x] Reused `ConsumptionBarChart.svelte` and `StatsCard.svelte` components with `subUnitLabel="month"`
+- [x] Added year navigation (prev/next arrows + "Current Year" button)
+- [x] Updated NavBar with yearly link
+- [x] Updated home page with yearly analysis card
+
 ## Next Steps
 
 ### Remaining Phases
 
-6. Yearly view (next)
 7. Comparison overlays (add to all three views)
 8. Targets page
 9. Target integration

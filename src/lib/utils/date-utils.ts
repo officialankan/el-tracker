@@ -164,3 +164,31 @@ export function navigateMonth(
 export function formatMonthLabel(year: number, month: number): string {
 	return format(new Date(year, month - 1), "MMMM yyyy");
 }
+
+// ── Year utilities ──────────────────────────────────────────────
+
+/**
+ * Get current year
+ * @returns Current year number
+ */
+export function getCurrentYear(): number {
+	return new Date().getFullYear();
+}
+
+/**
+ * Get all 12 months for a given year
+ * @param year Full year
+ * @returns Array of { year, month } for months 1-12
+ */
+export function getYearMonths(year: number): { year: number; month: number }[] {
+	return Array.from({ length: 12 }, (_, i) => ({ year, month: i + 1 }));
+}
+
+/**
+ * Format a short month name
+ * @param month Month 1-12
+ * @returns Short month name (Jan, Feb, etc.)
+ */
+export function formatShortMonth(month: number): string {
+	return format(new Date(2000, month - 1), "MMM");
+}

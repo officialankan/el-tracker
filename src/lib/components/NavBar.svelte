@@ -22,6 +22,11 @@
 			title: "Analys - månad",
 			href: "/monthly",
 			description: "Analys per månad."
+		},
+		{
+			title: "Analys - år",
+			href: "/yearly",
+			description: "Analys per år."
 		}
 	];
 
