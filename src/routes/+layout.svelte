@@ -8,7 +8,5 @@
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-<div class="ml-2">
-	<NavBar />
-</div>
+<NavBar />
 {@render children()}
