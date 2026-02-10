@@ -64,7 +64,7 @@
 				<div>
 					<p class="text-sm text-muted-foreground">vs. Rolling Average</p>
 					<p class="text-2xl font-bold">
-						{formatKWh(total - rollingAverage, 1)}
+						{formatKWh(total - rollingAverage)}
 						<span class="text-sm {total > rollingAverage ? 'text-red-600' : 'text-green-600'}">
 							({formatPercent(((total - rollingAverage) / rollingAverage) * 100)})
 						</span>
@@ -76,7 +76,7 @@
 				<div>
 					<p class="text-sm text-muted-foreground">vs. Previous Period</p>
 					<p class="text-2xl font-bold">
-						{formatKWh(total - previousTotal, 1)}
+						{formatKWh(total - previousTotal)}
 						<span class="text-sm {changeColor}">
 							({formatPercent(percentChange)})
 						</span>
@@ -88,7 +88,7 @@
 				<div>
 					<p class="text-sm text-muted-foreground">vs. Target</p>
 					<p class="text-2xl font-bold">
-						{formatKWh(total - target.value, 1)}
+						{formatKWh(total - target.value)}
 						<span class="text-sm {targetColor}">
 							({formatPercent(((total - target.value) / target.value) * 100)})
 						</span>

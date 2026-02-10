@@ -3,20 +3,20 @@ import { formatKWh, formatPercent, formatNumber } from "./format";
 
 describe("format", () => {
 	describe("formatKWh", () => {
-		it("should format kWh with default 2 decimals", () => {
-			expect(formatKWh(123.456)).toBe("123.46 kWh");
-			expect(formatKWh(10)).toBe("10.00 kWh");
+		it("should format kWh with default 0 decimals", () => {
+			expect(formatKWh(123.456)).toBe("123 kWh");
+			expect(formatKWh(10)).toBe("10 kWh");
+			expect(formatKWh(7000)).toBe("7\u00A0000 kWh");
 		});
 
 		it("should format kWh with custom decimals", () => {
-			expect(formatKWh(123.456, 0)).toBe("123 kWh");
 			expect(formatKWh(123.456, 1)).toBe("123.5 kWh");
 			expect(formatKWh(123.456, 3)).toBe("123.456 kWh");
 		});
 
 		it("should handle zero and negative values", () => {
-			expect(formatKWh(0)).toBe("0.00 kWh");
-			expect(formatKWh(-10.5)).toBe("-10.50 kWh");
+			expect(formatKWh(0)).toBe("0 kWh");
+			expect(formatKWh(-10.5)).toBe("-11 kWh");
 		});
 	});
 
@@ -43,13 +43,13 @@ describe("format", () => {
 
 	describe("formatNumber", () => {
 		it("should format numbers with default 0 decimals", () => {
-			expect(formatNumber(1234)).toBe("1,234");
-			expect(formatNumber(1234567)).toBe("1,234,567");
+			expect(formatNumber(1234)).toBe("1\u00A0234");
+			expect(formatNumber(1234567)).toBe("1\u00A0234\u00A0567");
 		});
 
 		it("should format numbers with custom decimals", () => {
-			expect(formatNumber(1234.567, 2)).toBe("1,234.57");
-			expect(formatNumber(1234.5, 1)).toBe("1,234.5");
+			expect(formatNumber(1234.567, 2)).toBe("1\u00A0234.57");
+			expect(formatNumber(1234.5, 1)).toBe("1\u00A0234.5");
 		});
 
 		it("should handle small numbers without separators", () => {
@@ -59,8 +59,8 @@ describe("format", () => {
 
 		it("should handle zero and negative values", () => {
 			expect(formatNumber(0)).toBe("0");
-			expect(formatNumber(-1234)).toBe("-1,234");
-			expect(formatNumber(-1234.56, 2)).toBe("-1,234.56");
+			expect(formatNumber(-1234)).toBe("-1\u00A0234");
+			expect(formatNumber(-1234.56, 2)).toBe("-1\u00A0234.56");
 		});
 	});
 });

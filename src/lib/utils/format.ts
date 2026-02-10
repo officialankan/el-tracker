@@ -8,8 +8,11 @@
  * @param decimals Number of decimal places (default: 2)
  * @returns Formatted string with "kWh" suffix
  */
-export function formatKWh(kwh: number, decimals = 2): string {
-	return `${kwh.toFixed(decimals)} kWh`;
+export function formatKWh(kwh: number, decimals = 0): string {
+	const fixed = kwh.toFixed(decimals);
+	const [intPart, decPart] = fixed.split(".");
+	const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+	return `${decPart ? `${formatted}.${decPart}` : formatted} kWh`;
 }
 
 /**
@@ -29,5 +32,8 @@ export function formatPercent(percent: number): string {
  * @returns Formatted string
  */
 export function formatNumber(num: number, decimals = 0): string {
-	return num.toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	const fixed = num.toFixed(decimals);
+	const [intPart, decPart] = fixed.split(".");
+	const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+	return decPart ? `${formatted}.${decPart}` : formatted;
 }
