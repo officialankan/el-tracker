@@ -43,10 +43,26 @@ export const load: PageServerLoad = async ({ url }) => {
 		value: maxValue
 	};
 
-	// Projection for incomplete years
-	const monthsWithData = validValues.length;
+	// Projection for incomplete years (based on days with data for accuracy)
+	const yearStart = `${year}-01-01`;
+	const yearEnd = `${year}-12-31`;
+	const daysInYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 366 : 365;
+
+	const daysWithDataResult = await db
+		.select({
+			count: sql<number>`COUNT(DISTINCT DATE(${consumption.timestamp}))`
+		})
+		.from(consumption)
+		.where(
+			and(
+				gte(consumption.timestamp, `${yearStart}T00:00:00`),
+				lte(consumption.timestamp, `${yearEnd}T23:59:59`)
+			)
+		);
+
+	const daysWithData = daysWithDataResult[0]?.count ?? 0;
 	const projection =
-		monthsWithData > 0 && monthsWithData < 12 ? (total / monthsWithData) * 12 : null;
+		daysWithData > 0 && daysWithData < daysInYear ? (total / daysWithData) * daysInYear : null;
 
 	// Rolling 3-year average (excluding current year)
 	let rollingAverage = 0;
