@@ -3,14 +3,31 @@
 	import { Button } from "$lib/components/ui/button";
 	import StatsCard from "$lib/components/StatsCard.svelte";
 	import ConsumptionBarChart from "$lib/components/ConsumptionBarChart.svelte";
+	import ComparisonSelector from "$lib/components/ComparisonSelector.svelte";
 	import { formatMonthLabel } from "$lib/utils/date-utils";
 	import { ChevronLeft, ChevronRight } from "@lucide/svelte";
 
 	let { data }: { data: PageData } = $props();
 
-	const labels = $derived(data.monthDates.map((_, i) => String(i + 1)));
+	const maxDays = $derived(Math.max(data.monthDates.length, data.comparisonDailyValues.length));
+	const labels = $derived(Array.from({ length: maxDays }, (_, i) => String(i + 1)));
+	const paddedData = $derived([
+		...data.dailyValues,
+		...Array<null>(maxDays - data.dailyValues.length).fill(null)
+	]);
+	const paddedComparison = $derived([
+		...data.comparisonDailyValues,
+		...Array<null>(maxDays - data.comparisonDailyValues.length).fill(null)
+	]);
 
 	const periodLabel = $derived(formatMonthLabel(data.year, data.month));
+	const basePath = $derived(`/monthly?year=${data.year}&month=${data.month}`);
+
+	const comparisonLabel = $derived(
+		data.comparison.isCustom
+			? formatMonthLabel(data.comparison.year, data.comparison.month)
+			: "Previous Month"
+	);
 </script>
 
 <div class="container mx-auto space-y-6 p-6">
@@ -48,13 +65,22 @@
 		</div>
 	</div>
 
+	<ComparisonSelector
+		mode="monthly"
+		{basePath}
+		compareYear={data.comparison.year}
+		compareMonth={data.comparison.month}
+		enabled={data.comparison.isCustom}
+		{comparisonLabel}
+	/>
+
 	<div class="grid gap-6 lg:grid-cols-2">
 		<div class="lg:col-span-2">
 			<ConsumptionBarChart
 				{labels}
-				data={data.dailyValues}
-				comparisonData={data.prevDailyValues}
-				comparisonLabel="Previous Month"
+				data={paddedData}
+				comparisonData={paddedComparison}
+				{comparisonLabel}
 				yLabel="This Month"
 			/>
 		</div>

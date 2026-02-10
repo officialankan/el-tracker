@@ -3,13 +3,14 @@
 	import { Button } from "$lib/components/ui/button";
 	import StatsCard from "$lib/components/StatsCard.svelte";
 	import ConsumptionBarChart from "$lib/components/ConsumptionBarChart.svelte";
+	import ComparisonSelector from "$lib/components/ComparisonSelector.svelte";
 	import { formatDateRange, formatDayOfWeek } from "$lib/utils/date-utils";
 	import { ChevronLeft, ChevronRight } from "@lucide/svelte";
 
 	let { data }: { data: PageData } = $props();
 
 	const labels = $derived(
-		data.weekDates.map((date, i) => {
+		data.weekDates.map((date) => {
 			const day = formatDayOfWeek(date);
 			const dayNum = new Date(date).getDate();
 			return `${day} ${dayNum}`;
@@ -18,6 +19,13 @@
 
 	const dateRangeLabel = $derived(formatDateRange(data.weekDates[0], data.weekDates[6]));
 	const periodLabel = $derived(`Week ${data.week}, ${data.year}`);
+	const basePath = $derived(`/weekly?year=${data.year}&week=${data.week}`);
+
+	const comparisonLabel = $derived(
+		data.comparison.isCustom
+			? `Week ${data.comparison.week}, ${data.comparison.year}`
+			: "Previous Week"
+	);
 </script>
 
 <div class="container mx-auto space-y-6 p-6">
@@ -55,13 +63,22 @@
 		</div>
 	</div>
 
+	<ComparisonSelector
+		mode="weekly"
+		{basePath}
+		compareYear={data.comparison.year}
+		compareWeek={data.comparison.week}
+		enabled={data.comparison.isCustom}
+		{comparisonLabel}
+	/>
+
 	<div class="grid gap-6 lg:grid-cols-2">
 		<div class="lg:col-span-2">
 			<ConsumptionBarChart
 				{labels}
 				data={data.dailyValues}
-				comparisonData={data.prevDailyValues}
-				comparisonLabel="Previous Week"
+				comparisonData={data.comparisonDailyValues}
+				{comparisonLabel}
 				yLabel="This Week"
 			/>
 		</div>

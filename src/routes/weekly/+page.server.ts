@@ -2,18 +2,21 @@ import type { PageServerLoad } from "./$types";
 import { db } from "$lib/server/db";
 import { consumption } from "$lib/server/db/schema";
 import { and, gte, lte, sql } from "drizzle-orm";
-import {
-	getCurrentWeek,
-	getWeekDateRange,
-	getMondayOfISOWeek,
-	navigateWeek
-} from "$lib/utils/date-utils";
+import { getCurrentWeek, getWeekDateRange, navigateWeek } from "$lib/utils/date-utils";
 
 export const load: PageServerLoad = async ({ url }) => {
 	// Get week from URL params or default to current week
 	const current = getCurrentWeek();
 	const year = parseInt(url.searchParams.get("year") ?? String(current.year));
 	const week = parseInt(url.searchParams.get("week") ?? String(current.week));
+
+	// Parse comparison params (default to previous week)
+	const previousWeek = navigateWeek(year, week, -1);
+	const compareYearParam = url.searchParams.get("compare_year");
+	const compareWeekParam = url.searchParams.get("compare_week");
+	const hasCustomCompare = compareYearParam !== null && compareWeekParam !== null;
+	const compareYear = hasCustomCompare ? parseInt(compareYearParam) : previousWeek.year;
+	const compareWeek = hasCustomCompare ? parseInt(compareWeekParam) : previousWeek.week;
 
 	// Get date range for the week (Monday to Sunday)
 	const weekDates = getWeekDateRange(year, week);
@@ -53,7 +56,6 @@ export const load: PageServerLoad = async ({ url }) => {
 	};
 
 	// Calculate rolling 4-week average (excluding current week)
-	const previousWeek = navigateWeek(year, week, -1);
 	const fourWeeksAgo = navigateWeek(previousWeek.year, previousWeek.week, -3);
 	const rollingStartDate = getWeekDateRange(fourWeeksAgo.year, fourWeeksAgo.week)[0];
 	const rollingEndDate = getWeekDateRange(previousWeek.year, previousWeek.week)[6];
@@ -73,7 +75,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const rollingTotal = rollingData[0]?.total ?? 0;
 	const rollingAverage = rollingTotal / 4;
 
-	// Calculate previous week stats for comparison
+	// Calculate previous week stats (always the actual previous week for stats)
 	const prevWeekDates = getWeekDateRange(previousWeek.year, previousWeek.week);
 	const prevWeekData = await db
 		.select()
@@ -86,18 +88,40 @@ export const load: PageServerLoad = async ({ url }) => {
 		)
 		.orderBy(consumption.timestamp);
 
-	// Create a map of date -> kWh for previous week
-	const prevDataMap = new Map<string, number>();
-	prevWeekData.forEach((row) => {
-		const date = row.timestamp.split("T")[0];
-		prevDataMap.set(date, row.kwh);
-	});
-
-	// Build array of daily values for previous week (null if no data)
-	const prevDailyValues = prevWeekDates.map((date) => prevDataMap.get(date) ?? null);
-
 	const previousTotal = prevWeekData.reduce((sum, row) => sum + row.kwh, 0);
 	const percentChange = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
+
+	// Fetch comparison data (custom or previous week)
+	const compWeekDates = getWeekDateRange(compareYear, compareWeek);
+	let compDailyValues: (number | null)[];
+
+	if (!hasCustomCompare) {
+		// Reuse previous week data already fetched
+		const prevDataMap = new Map<string, number>();
+		prevWeekData.forEach((row) => {
+			const date = row.timestamp.split("T")[0];
+			prevDataMap.set(date, row.kwh);
+		});
+		compDailyValues = prevWeekDates.map((date) => prevDataMap.get(date) ?? null);
+	} else {
+		const compWeekData = await db
+			.select()
+			.from(consumption)
+			.where(
+				and(
+					gte(consumption.timestamp, `${compWeekDates[0]}T00:00:00`),
+					lte(consumption.timestamp, `${compWeekDates[6]}T23:59:59`)
+				)
+			)
+			.orderBy(consumption.timestamp);
+
+		const compDataMap = new Map<string, number>();
+		compWeekData.forEach((row) => {
+			const date = row.timestamp.split("T")[0];
+			compDataMap.set(date, row.kwh);
+		});
+		compDailyValues = compWeekDates.map((date) => compDataMap.get(date) ?? null);
+	}
 
 	// Navigation
 	const prev = navigateWeek(year, week, -1);
@@ -108,7 +132,12 @@ export const load: PageServerLoad = async ({ url }) => {
 		week,
 		weekDates,
 		dailyValues,
-		prevDailyValues,
+		comparisonDailyValues: compDailyValues,
+		comparison: {
+			year: compareYear,
+			week: compareWeek,
+			isCustom: hasCustomCompare
+		},
 		stats: {
 			total,
 			average,

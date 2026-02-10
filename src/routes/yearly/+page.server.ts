@@ -98,7 +98,12 @@ export const load: PageServerLoad = async ({ url }) => {
 		rollingAverage = yearsWithData > 0 ? rollingTotal / yearsWithData : 0;
 	}
 
-	// Previous year data for comparison
+	// Parse comparison param (default to previous year)
+	const compareParam = url.searchParams.get("compare");
+	const hasCustomCompare = compareParam !== null;
+	const compareYear = hasCustomCompare ? parseInt(compareParam) : year - 1;
+
+	// Previous year stats (always the actual previous year for stats)
 	const prevYear = year - 1;
 	const prevMonths = getYearMonths(prevYear);
 	const prevMonthlyTotals: (number | null)[] = [];
@@ -128,10 +133,45 @@ export const load: PageServerLoad = async ({ url }) => {
 	const previousTotal = prevValidValues.reduce((sum, val) => sum + val, 0);
 	const percentChange = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
 
+	// Fetch comparison data (custom or previous year)
+	let compMonthlyTotals: (number | null)[];
+
+	if (!hasCustomCompare) {
+		compMonthlyTotals = prevMonthlyTotals;
+	} else {
+		const compMonths = getYearMonths(compareYear);
+		compMonthlyTotals = [];
+
+		for (const { year: cy, month } of compMonths) {
+			const dates = getMonthDateRange(cy, month);
+			const startDate = dates[0];
+			const endDate = dates[dates.length - 1];
+
+			const result = await db
+				.select({
+					total: sql<number>`SUM(${consumption.kwh})`
+				})
+				.from(consumption)
+				.where(
+					and(
+						gte(consumption.timestamp, `${startDate}T00:00:00`),
+						lte(consumption.timestamp, `${endDate}T23:59:59`)
+					)
+				);
+
+			const t = result[0]?.total;
+			compMonthlyTotals.push(t != null ? t : null);
+		}
+	}
+
 	return {
 		year,
 		monthlyTotals,
-		prevMonthlyTotals,
+		comparisonMonthlyTotals: compMonthlyTotals,
+		comparison: {
+			year: compareYear,
+			isCustom: hasCustomCompare
+		},
 		stats: {
 			total,
 			average,

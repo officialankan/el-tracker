@@ -3,6 +3,7 @@
 	import { Button } from "$lib/components/ui/button";
 	import StatsCard from "$lib/components/StatsCard.svelte";
 	import ConsumptionBarChart from "$lib/components/ConsumptionBarChart.svelte";
+	import ComparisonSelector from "$lib/components/ComparisonSelector.svelte";
 	import { formatShortMonth } from "$lib/utils/date-utils";
 	import { ChevronLeft, ChevronRight } from "@lucide/svelte";
 
@@ -11,6 +12,11 @@
 	const labels = $derived(Array.from({ length: 12 }, (_, i) => formatShortMonth(i + 1)));
 
 	const periodLabel = $derived(String(data.year));
+	const basePath = $derived(`/yearly?year=${data.year}`);
+
+	const comparisonLabel = $derived(
+		data.comparison.isCustom ? String(data.comparison.year) : "Previous Year"
+	);
 </script>
 
 <div class="container mx-auto space-y-6 p-6">
@@ -44,13 +50,21 @@
 		</div>
 	</div>
 
+	<ComparisonSelector
+		mode="yearly"
+		{basePath}
+		compareYear={data.comparison.year}
+		enabled={data.comparison.isCustom}
+		{comparisonLabel}
+	/>
+
 	<div class="grid gap-6 lg:grid-cols-2">
 		<div class="lg:col-span-2">
 			<ConsumptionBarChart
 				{labels}
 				data={data.monthlyTotals}
-				comparisonData={data.prevMonthlyTotals}
-				comparisonLabel="Previous Year"
+				comparisonData={data.comparisonMonthlyTotals}
+				{comparisonLabel}
 				yLabel="This Year"
 			/>
 		</div>

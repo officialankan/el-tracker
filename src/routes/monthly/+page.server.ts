@@ -81,7 +81,14 @@ export const load: PageServerLoad = async ({ url }) => {
 	const rollingTotal = rollingData[0]?.total ?? 0;
 	const rollingAverage = rollingTotal / 3;
 
-	// Calculate previous month stats for comparison
+	// Parse comparison params (default to previous month)
+	const compareYearParam = url.searchParams.get("compare_year");
+	const compareMonthParam = url.searchParams.get("compare_month");
+	const hasCustomCompare = compareYearParam !== null && compareMonthParam !== null;
+	const compareYear = hasCustomCompare ? parseInt(compareYearParam) : prevMonth.year;
+	const compareMonth = hasCustomCompare ? parseInt(compareMonthParam) : prevMonth.month;
+
+	// Calculate previous month stats (always the actual previous month for stats)
 	const prevMonthDates = getMonthDateRange(prevMonth.year, prevMonth.month);
 	const prevMonthData = await db
 		.select()
@@ -94,18 +101,40 @@ export const load: PageServerLoad = async ({ url }) => {
 		)
 		.orderBy(consumption.timestamp);
 
-	// Create a map of date -> kWh for previous month
-	const prevDataMap = new Map<string, number>();
-	prevMonthData.forEach((row) => {
-		const date = row.timestamp.split("T")[0];
-		prevDataMap.set(date, row.kwh);
-	});
-
-	// Build array of daily values for previous month (null if no data)
-	const prevDailyValues = prevMonthDates.map((date) => prevDataMap.get(date) ?? null);
-
 	const previousTotal = prevMonthData.reduce((sum, row) => sum + row.kwh, 0);
 	const percentChange = previousTotal > 0 ? ((total - previousTotal) / previousTotal) * 100 : 0;
+
+	// Fetch comparison data (custom or previous month)
+	let compDailyValues: (number | null)[];
+
+	if (!hasCustomCompare) {
+		// Reuse previous month data already fetched
+		const prevDataMap = new Map<string, number>();
+		prevMonthData.forEach((row) => {
+			const date = row.timestamp.split("T")[0];
+			prevDataMap.set(date, row.kwh);
+		});
+		compDailyValues = prevMonthDates.map((date) => prevDataMap.get(date) ?? null);
+	} else {
+		const compMonthDates = getMonthDateRange(compareYear, compareMonth);
+		const compMonthData = await db
+			.select()
+			.from(consumption)
+			.where(
+				and(
+					gte(consumption.timestamp, `${compMonthDates[0]}T00:00:00`),
+					lte(consumption.timestamp, `${compMonthDates[compMonthDates.length - 1]}T23:59:59`)
+				)
+			)
+			.orderBy(consumption.timestamp);
+
+		const compDataMap = new Map<string, number>();
+		compMonthData.forEach((row) => {
+			const date = row.timestamp.split("T")[0];
+			compDataMap.set(date, row.kwh);
+		});
+		compDailyValues = compMonthDates.map((date) => compDataMap.get(date) ?? null);
+	}
 
 	// Navigation
 	const prev = navigateMonth(year, month, -1);
@@ -116,7 +145,12 @@ export const load: PageServerLoad = async ({ url }) => {
 		month,
 		monthDates,
 		dailyValues,
-		prevDailyValues,
+		comparisonDailyValues: compDailyValues,
+		comparison: {
+			year: compareYear,
+			month: compareMonth,
+			isCustom: hasCustomCompare
+		},
 		stats: {
 			total,
 			average,
