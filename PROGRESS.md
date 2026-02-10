@@ -93,11 +93,29 @@ Last updated: 2026-02-10
 - [x] Updated NavBar with yearly link
 - [x] Updated home page with yearly analysis card
 
+### Phase 7: Comparison Overlays ✅
+
+- [x] Created reusable `ComparisonSelector.svelte` component
+  - [x] Mode-aware inputs: year/week picker, year/month picker, or year-only picker
+  - [x] Toggle between default (previous period) and custom comparison
+  - [x] URL-driven via `<a>` navigation (same pattern as nav arrows)
+  - [x] Writable `$derived` for input state, proper a11y labels
+- [x] Updated weekly view to support custom comparison
+  - [x] URL params: `?year=X&week=Y&compare_year=X&compare_week=Y`
+  - [x] Defaults to previous week when no compare params
+  - [x] Stats (percentChange, previousTotal) always use actual previous week
+- [x] Updated monthly view to support custom comparison
+  - [x] URL params: `?year=X&month=Y&compare_year=X&compare_month=Y`
+  - [x] X-axis extends to the longer month when comparing months of different lengths
+  - [x] Both data arrays null-padded to match
+- [x] Updated yearly view to support custom comparison
+  - [x] URL params: `?year=X&compare=Y`
+- [x] Dynamic comparison labels (e.g., "Week 4, 2026" instead of always "Previous Week")
+
 ## Next Steps
 
 ### Remaining Phases
 
-7. Comparison overlays (add to all three views)
 8. Targets page
 9. Target integration
 10. Patterns page
