@@ -1,7 +1,7 @@
 import type { PageServerLoad } from "./$types";
 import { db } from "$lib/server/db";
-import { consumption } from "$lib/server/db/schema";
-import { and, gte, lte, sql } from "drizzle-orm";
+import { consumption, targets } from "$lib/server/db/schema";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { getCurrentWeek, getWeekDateRange, navigateWeek } from "$lib/utils/date-utils";
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -123,6 +123,15 @@ export const load: PageServerLoad = async ({ url }) => {
 		compDailyValues = compWeekDates.map((date) => compDataMap.get(date) ?? null);
 	}
 
+	// Active target
+	const today = new Date().toISOString().split("T")[0];
+	const activeTarget = await db
+		.select()
+		.from(targets)
+		.where(and(eq(targets.periodType, "weekly"), lte(targets.validFrom, today)))
+		.orderBy(desc(targets.validFrom))
+		.limit(1);
+
 	// Navigation
 	const prev = navigateWeek(year, week, -1);
 	const next = navigateWeek(year, week, 1);
@@ -146,6 +155,9 @@ export const load: PageServerLoad = async ({ url }) => {
 			previousTotal,
 			percentChange
 		},
+		target: activeTarget[0]
+			? { value: activeTarget[0].kwhTarget, validFrom: activeTarget[0].validFrom }
+			: null,
 		navigation: {
 			prev,
 			next,

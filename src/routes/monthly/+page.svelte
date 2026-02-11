@@ -81,6 +81,7 @@
 				data={paddedData}
 				comparisonData={paddedComparison}
 				{comparisonLabel}
+				targetLine={data.target?.value}
 				yLabel="This Month"
 			/>
 		</div>
@@ -93,6 +94,7 @@
 				rollingAverage={data.stats.rollingAverage}
 				previousTotal={data.stats.previousTotal}
 				percentChange={data.stats.percentChange}
+				target={data.target}
 				projection={data.stats.projection}
 				{periodLabel}
 				subUnitLabel="day"

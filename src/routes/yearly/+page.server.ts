@@ -1,7 +1,7 @@
 import type { PageServerLoad } from "./$types";
 import { db } from "$lib/server/db";
-import { consumption } from "$lib/server/db/schema";
-import { and, gte, lte, sql } from "drizzle-orm";
+import { consumption, targets } from "$lib/server/db/schema";
+import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { getCurrentYear, getYearMonths, getMonthDateRange } from "$lib/utils/date-utils";
 
 export const load: PageServerLoad = async ({ url }) => {
@@ -164,6 +164,15 @@ export const load: PageServerLoad = async ({ url }) => {
 		}
 	}
 
+	// Active target
+	const today = new Date().toISOString().split("T")[0];
+	const activeTarget = await db
+		.select()
+		.from(targets)
+		.where(and(eq(targets.periodType, "yearly"), lte(targets.validFrom, today)))
+		.orderBy(desc(targets.validFrom))
+		.limit(1);
+
 	return {
 		year,
 		monthlyTotals,
@@ -181,6 +190,9 @@ export const load: PageServerLoad = async ({ url }) => {
 			percentChange,
 			projection
 		},
+		target: activeTarget[0]
+			? { value: activeTarget[0].kwhTarget, validFrom: activeTarget[0].validFrom }
+			: null,
 		navigation: {
 			prev: year - 1,
 			next: year + 1,

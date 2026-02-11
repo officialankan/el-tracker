@@ -65,6 +65,7 @@
 				data={data.monthlyTotals}
 				comparisonData={data.comparisonMonthlyTotals}
 				{comparisonLabel}
+				targetLine={data.target?.value}
 				yLabel="This Year"
 			/>
 		</div>
@@ -77,6 +78,7 @@
 				rollingAverage={data.stats.rollingAverage}
 				previousTotal={data.stats.previousTotal}
 				percentChange={data.stats.percentChange}
+				target={data.target}
 				projection={data.stats.projection}
 				{periodLabel}
 				subUnitLabel="month"

@@ -1,6 +1,6 @@
 # Implementation Progress
 
-Last updated: 2026-02-10
+Last updated: 2026-02-11
 
 ## Completed Phases ✅
 
@@ -129,11 +129,32 @@ Last updated: 2026-02-10
   - [x] Logo link to home page
 - [x] Added Targets card to home page
 
+### Phase 9: Target Integration ✅
+
+- [x] Server load functions query active target for each period type
+  - `weekly/+page.server.ts`: queries `targets` where `periodType="weekly"` and `validFrom <= today`
+  - `monthly/+page.server.ts`: same for `"monthly"`
+  - `yearly/+page.server.ts`: same for `"yearly"`
+  - All return `target: { value, validFrom } | null`
+- [x] Page components pass target data to child components
+  - All three views pass `target={data.target}` to `<StatsCard>`
+  - All three views pass `targetLine={data.target?.value}` to `<ConsumptionBarChart>`
+- [x] StatsCard "vs. Target" stat row works (green/red indicator, already had the UI — now wired)
+- [x] Cumulative progress area overlay in `ConsumptionBarChart.svelte`
+  - Uses LayerChart `<Area y1="cumulative">` to show cumulative kWh building up
+  - Stops at last day/month with data (cumulative set to `null` for missing data)
+  - Tooltip shows "Cumulative" value (rounded to whole number) on hover
+  - `maxValue` / `yDomain` scaled to fit both bars and cumulative total
+- [x] Target horizontal dashed line
+  - Created custom `TargetLine.svelte` component using `getChartContext()` from LayerChart
+  - Draws raw SVG `<line>` with proper pixel coordinates via `ctx.yScale(value)`
+  - Styled with Tailwind `stroke-muted-foreground` class (not inline `hsl()` — SVG attribute doesn't resolve CSS custom properties)
+  - LayerChart's `<Rule>` component was unusable due to internal filter removing lines outside pixel range
+
 ## Next Steps
 
 ### Remaining Phases
 
-9. Target integration
 10. Patterns page
 11. Polish & error handling
 

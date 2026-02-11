@@ -79,6 +79,7 @@
 				data={data.dailyValues}
 				comparisonData={data.comparisonDailyValues}
 				{comparisonLabel}
+				targetLine={data.target?.value}
 				yLabel="This Week"
 			/>
 		</div>
@@ -91,6 +92,7 @@
 				rollingAverage={data.stats.rollingAverage}
 				previousTotal={data.stats.previousTotal}
 				percentChange={data.stats.percentChange}
+				target={data.target}
 				{periodLabel}
 				subUnitLabel="day"
 			/>
