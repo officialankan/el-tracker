@@ -8,6 +8,7 @@
 		{ title: "Vecka", href: "/weekly" },
 		{ title: "Månad", href: "/monthly" },
 		{ title: "År", href: "/yearly" },
+		{ title: "Mönster", href: "/patterns" },
 		{ title: "Mål", href: "/targets" }
 	];
 </script>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import * as Card from "$lib/components/ui/card";
 	import { Button } from "$lib/components/ui/button";
-	import { BarChart3, Target, Upload } from "@lucide/svelte";
+	import { BarChart3, Target, TrendingUp, Upload } from "@lucide/svelte";
 </script>
 
 <div class="container mx-auto max-w-2xl space-y-8 p-6">
@@ -63,6 +63,19 @@
 			</Card.Header>
 			<Card.Content>
 				<Button href="/yearly" class="w-full">View Yearly</Button>
+			</Card.Content>
+		</Card.Root>
+
+		<Card.Root class="transition-shadow hover:shadow-md">
+			<Card.Header>
+				<div class="flex items-center gap-2">
+					<TrendingUp class="h-5 w-5" />
+					<Card.Title>Patterns</Card.Title>
+				</div>
+				<Card.Description>Discover consumption patterns across days and months</Card.Description>
+			</Card.Header>
+			<Card.Content>
+				<Button href="/patterns" class="w-full">View Patterns</Button>
 			</Card.Content>
 		</Card.Root>
 

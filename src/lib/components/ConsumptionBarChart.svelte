@@ -90,9 +90,15 @@
 				{#snippet children({ data: d })}
 					<Tooltip.Header>{d.label}</Tooltip.Header>
 					<Tooltip.List>
-						<Tooltip.Item label={yLabel ?? "Consumption"} value={d.value} />
+						<Tooltip.Item
+							label={yLabel ?? "Consumption"}
+							value={d.value != null ? Math.round(d.value) : d.value}
+						/>
 						{#if d.comparison !== null && comparisonData}
-							<Tooltip.Item label={comparisonLabel ?? "Comparison"} value={d.comparison} />
+							<Tooltip.Item
+								label={comparisonLabel ?? "Comparison"}
+								value={d.comparison != null ? Math.round(d.comparison) : d.comparison}
+							/>
 						{/if}
 						{#if d.cumulative != null}
 							<Tooltip.Item label="Cumulative" value={Math.round(d.cumulative)} />

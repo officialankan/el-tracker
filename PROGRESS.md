@@ -151,11 +151,32 @@ Last updated: 2026-02-11
   - Styled with Tailwind `stroke-muted-foreground` class (not inline `hsl()` — SVG attribute doesn't resolve CSS custom properties)
   - LayerChart's `<Rule>` component was unusable due to internal filter removing lines outside pixel range
 
+### Phase 10: Patterns Page ✅
+
+- [x] Created `/patterns` route with `+page.server.ts` load function
+  - [x] Day-of-week averages (Mon–Sun) via SQL `strftime('%w')` with reordering
+  - [x] Month-of-year averages (Jan–Dec) via SQL `strftime('%m')`
+  - [x] Heatmap data: daily totals with configurable `?months=N` param (default 3)
+- [x] Created `+page.svelte` with 3 sections
+  - [x] Day-of-week bar chart (reuses `ConsumptionBarChart`)
+  - [x] Month-of-year bar chart (reuses `ConsumptionBarChart`)
+  - [x] Calendar heatmap with 3mo/6mo/12mo toggle (`data-sveltekit-noscroll`)
+- [x] Created `HeatmapChart.svelte` component
+  - [x] GitHub contribution graph style CSS grid (7 rows Mon–Sun × N week columns)
+  - [x] Quantile-based 5-level color scale using `color-mix(in oklch, ...)` (compatible with project's oklch theme)
+  - [x] Hover tooltip with date + kWh, month labels along top, day labels on left
+  - [x] Legend (Less → More), client-side only rendering
+  - [x] Uses `SvelteMap`/`SvelteDate` to satisfy `svelte/prefer-svelte-reactivity` lint rule
+- [x] Updated NavBar: added "Mönster" link
+- [x] Updated home page: added Patterns card with `TrendingUp` icon
+- [x] Rounded all bar chart tooltip values to 0 decimals (ConsumptionBarChart)
+- [x] Code passes format, lint (no new errors), and type check (no new errors)
+- [x] Visual inspection complete
+
 ## Next Steps
 
 ### Remaining Phases
 
-10. Patterns page
 11. Polish & error handling
 
 ## Important Notes
