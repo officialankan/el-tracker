@@ -1,13 +1,17 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
 	import { Button } from "$lib/components/ui/button";
+	import { Toggle } from "$lib/components/ui/toggle";
 	import StatsCard from "$lib/components/StatsCard.svelte";
 	import ConsumptionBarChart from "$lib/components/ConsumptionBarChart.svelte";
 	import ComparisonSelector from "$lib/components/ComparisonSelector.svelte";
 	import { formatShortMonth } from "$lib/utils/date-utils";
-	import { ChevronLeft, ChevronRight } from "@lucide/svelte";
+	import { ChevronLeft, ChevronRight, Target, TrendingUp } from "@lucide/svelte";
 
 	let { data }: { data: PageData } = $props();
+
+	let showTarget = $state(true);
+	let showCumulative = $state(true);
 
 	const labels = $derived(Array.from({ length: 12 }, (_, i) => formatShortMonth(i + 1)));
 
@@ -60,12 +64,26 @@
 
 	<div class="grid gap-6 lg:grid-cols-2">
 		<div class="lg:col-span-2">
+			{#if data.target}
+				<div class="mb-2 flex items-center gap-1">
+					<Toggle variant="outline" size="sm" bind:pressed={showTarget}>
+						<Target class="h-4 w-4" />
+						Target
+					</Toggle>
+					<Toggle variant="outline" size="sm" bind:pressed={showCumulative}>
+						<TrendingUp class="h-4 w-4" />
+						Cumulative
+					</Toggle>
+				</div>
+			{/if}
 			<ConsumptionBarChart
 				{labels}
 				data={data.monthlyTotals}
 				comparisonData={data.comparisonMonthlyTotals}
 				{comparisonLabel}
 				targetLine={data.target?.value}
+				{showTarget}
+				{showCumulative}
 				yLabel="This Year"
 			/>
 		</div>
@@ -78,7 +96,7 @@
 				rollingAverage={data.stats.rollingAverage}
 				previousTotal={data.stats.previousTotal}
 				percentChange={data.stats.percentChange}
-				target={data.target}
+				target={showTarget ? data.target : null}
 				projection={data.stats.projection}
 				{periodLabel}
 				subUnitLabel="month"

@@ -10,12 +10,23 @@
 		comparisonData?: (number | null)[];
 		comparisonLabel?: string;
 		targetLine?: number;
+		showTarget?: boolean;
+		showCumulative?: boolean;
 		xLabel?: string;
 		yLabel?: string;
 	}
 
-	let { labels, data, comparisonData, comparisonLabel, targetLine, xLabel, yLabel }: Props =
-		$props();
+	let {
+		labels,
+		data,
+		comparisonData,
+		comparisonLabel,
+		targetLine,
+		showTarget = true,
+		showCumulative = true,
+		xLabel,
+		yLabel
+	}: Props = $props();
 
 	// Transform data into layerchart format (with cumulative for target overlay)
 	const chartData = $derived.by(() => {
@@ -29,7 +40,7 @@
 				label,
 				value,
 				comparison: comparisonData?.[i] ?? null,
-				cumulative: targetLine != null && value != null ? cumSum : null
+				cumulative: targetLine != null && showCumulative && value != null ? cumSum : null
 			};
 		});
 	});
@@ -40,8 +51,8 @@
 		Math.max(
 			...data.filter((v) => v !== null),
 			...(comparisonData?.filter((v) => v !== null) ?? []),
-			targetLine ?? 0,
-			targetLine ? cumulativeTotal : 0
+			targetLine && showTarget ? targetLine : 0,
+			targetLine && showCumulative ? cumulativeTotal : 0
 		) * 1.1
 	);
 </script>
@@ -65,8 +76,10 @@
 					rule
 				/>
 				<Axis placement="bottom" rule />
-				{#if targetLine}
+				{#if targetLine && showCumulative}
 					<Area y1="cumulative" class="fill-primary/10 stroke-primary/40" />
+				{/if}
+				{#if targetLine && showTarget}
 					<TargetLine value={targetLine} />
 				{/if}
 				{#if comparisonData}
