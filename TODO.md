@@ -11,3 +11,5 @@
 - [ ] in the patterns pagae after implementing the TODO above, implement a feature that lets the user compare
       patterns between two data source periods. like how the weekday pattern compares between two specific months.
 - [ ] in the patterns page heat map add a "1 month" view
+- [ ] we now have analysis for **electric** consumption. i can access my **water** consumption data the same
+      way. is it possible to toggle and do every analysis (view) but with water instead? should be straightforward and only require us to change label on y axes and tooltips. i think it would be neat to in the top menu bar where we now have "el tracker" we simply add a toggle to it so it can switch to "h2o tracker" and a new icon.

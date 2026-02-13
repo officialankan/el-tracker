@@ -1,9 +1,57 @@
 import type { PageServerLoad } from "./$types";
 import { db } from "$lib/server/db";
 import { consumption } from "$lib/server/db/schema";
-import { gte, sql } from "drizzle-orm";
+import { and, gte, lt, sql } from "drizzle-orm";
 
 export const load: PageServerLoad = async ({ url }) => {
+	// Read period filter params
+	const period = url.searchParams.get("period") ?? "all";
+	const yearParam = parseInt(url.searchParams.get("year") ?? "");
+	const monthParam = parseInt(url.searchParams.get("month") ?? "");
+
+	// Query available years from data
+	const yearRange = await db
+		.select({
+			minYear: sql<number>`cast(strftime('%Y', MIN(${consumption.timestamp})) as integer)`,
+			maxYear: sql<number>`cast(strftime('%Y', MAX(${consumption.timestamp})) as integer)`
+		})
+		.from(consumption);
+
+	const minYear = yearRange[0]?.minYear ?? new Date().getFullYear();
+	const maxYear = yearRange[0]?.maxYear ?? new Date().getFullYear();
+	const availableYears = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
+
+	// Build date range filter based on period
+	let startDate: string | null = null;
+	let endDate: string | null = null;
+	const validYear = !isNaN(yearParam) && yearParam >= minYear && yearParam <= maxYear;
+
+	if (period === "year" && validYear) {
+		startDate = `${yearParam}-01-01T00:00:00`;
+		endDate = `${yearParam + 1}-01-01T00:00:00`;
+	} else if (
+		period === "month" &&
+		validYear &&
+		!isNaN(monthParam) &&
+		monthParam >= 1 &&
+		monthParam <= 12
+	) {
+		const mm = String(monthParam).padStart(2, "0");
+		startDate = `${yearParam}-${mm}-01T00:00:00`;
+		// Next month
+		if (monthParam === 12) {
+			endDate = `${yearParam + 1}-01-01T00:00:00`;
+		} else {
+			const nextMm = String(monthParam + 1).padStart(2, "0");
+			endDate = `${yearParam}-${nextMm}-01T00:00:00`;
+		}
+	}
+
+	const periodFilter =
+		startDate && endDate
+			? and(gte(consumption.timestamp, startDate), lt(consumption.timestamp, endDate))
+			: undefined;
+
 	// Day-of-week averages (SQLite %w: 0=Sun..6=Sat → reorder to Mon–Sun)
 	const dowData = await db
 		.select({
@@ -11,6 +59,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			avgKwh: sql<number>`AVG(${consumption.kwh})`
 		})
 		.from(consumption)
+		.where(periodFilter)
 		.groupBy(sql`strftime('%w', ${consumption.timestamp})`)
 		.orderBy(sql`strftime('%w', ${consumption.timestamp})`);
 
@@ -29,6 +78,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			avgKwh: sql<number>`AVG(${consumption.kwh})`
 		})
 		.from(consumption)
+		.where(periodFilter)
 		.groupBy(sql`strftime('%m', ${consumption.timestamp})`)
 		.orderBy(sql`strftime('%m', ${consumption.timestamp})`);
 
@@ -50,12 +100,19 @@ export const load: PageServerLoad = async ({ url }) => {
 	monthData.forEach((row) => monthMap.set(row.month, row.avgKwh));
 	const monthOfYearValues = Array.from({ length: 12 }, (_, i) => monthMap.get(i + 1) ?? null);
 
-	// Heatmap data — aggregate daily totals, optionally limited by months param
-	let months = parseInt(url.searchParams.get("months") ?? "3");
-	if (isNaN(months) || months <= 0) months = 3;
-	const cutoffDate = new Date();
-	cutoffDate.setMonth(cutoffDate.getMonth() - months);
-	const cutoffStr = cutoffDate.toISOString().split("T")[0];
+	// Heatmap data — when period filter is active, show all data in that period;
+	// otherwise use the months param for "All time" mode
+	let heatmapFilter = periodFilter;
+	let months = 3;
+
+	if (!periodFilter) {
+		months = parseInt(url.searchParams.get("months") ?? "3");
+		if (isNaN(months) || months <= 0) months = 3;
+		const cutoffDate = new Date();
+		cutoffDate.setMonth(cutoffDate.getMonth() - months);
+		const cutoffStr = cutoffDate.toISOString().split("T")[0];
+		heatmapFilter = gte(consumption.timestamp, `${cutoffStr}T00:00:00`);
+	}
 
 	const heatmapData = await db
 		.select({
@@ -63,7 +120,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			kwh: sql<number>`SUM(${consumption.kwh})`
 		})
 		.from(consumption)
-		.where(gte(consumption.timestamp, `${cutoffStr}T00:00:00`))
+		.where(heatmapFilter)
 		.groupBy(sql`substr(${consumption.timestamp}, 1, 10)`)
 		.orderBy(sql`substr(${consumption.timestamp}, 1, 10)`);
 
@@ -77,6 +134,10 @@ export const load: PageServerLoad = async ({ url }) => {
 			values: monthOfYearValues
 		},
 		heatmap: heatmapData.map((row) => ({ date: row.date, kwh: row.kwh })),
-		months
+		months,
+		period: periodFilter ? period : "all",
+		year: validYear ? yearParam : null,
+		month: !isNaN(monthParam) && monthParam >= 1 && monthParam <= 12 ? monthParam : null,
+		availableYears
 	};
 };
