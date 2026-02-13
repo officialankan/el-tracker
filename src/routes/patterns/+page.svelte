@@ -10,7 +10,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	const monthsOptions = [3, 6, 12];
+	const monthsOptions = [1, 3, 6, 12];
 	const monthNames = [
 		"January",
 		"February",
