@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Electricity Consumption Tracker — a local-only SvelteKit app for importing, analyzing, and visualizing daily household electricity data from Swedish provider CSV exports. No authentication. See `initial-plan.md` for the full specification and `PROGRESS.md` for current implementation status.
+Electricity Consumption Tracker — a local-only SvelteKit app for importing, analyzing, and visualizing daily household electricity data from Swedish provider CSV exports. No authentication. See `INITIAL-PLAN.md` for the original specification, `ARCHITECTURE.md` for build notes and chart implementation details, and `TODO.md` for ongoing feature work.
 
 ## Tech Stack
 
