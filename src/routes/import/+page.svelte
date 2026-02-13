@@ -1,11 +1,21 @@
 <script lang="ts">
 	import { enhance } from "$app/forms";
+	import { page } from "$app/state";
 	import { Button } from "$lib/components/ui/button";
 	import { Textarea } from "$lib/components/ui/textarea";
 	import * as Card from "$lib/components/ui/card";
+	import { RESOURCE_CONFIG, type ResourceType } from "$lib/resource";
 	import type { ActionData } from "./$types";
 
 	let { form }: { form: ActionData } = $props();
+
+	const resource = $derived(page.data.resource as ResourceType);
+	const config = $derived(RESOURCE_CONFIG[resource]);
+	const pasteExample = $derived(
+		resource === "water"
+			? "Datum\tVatten L\n2026-02-02 (måndag)\t1 000"
+			: "Datum\tEl kWh\n2026-02-02 (måndag)\t101,895"
+	);
 	let uploading = $state(false);
 	let pasting = $state(false);
 
@@ -15,7 +25,7 @@
 </script>
 
 <div class="mx-auto max-w-2xl p-6">
-	<h1 class="mb-6 text-3xl font-bold">Import Consumption Data</h1>
+	<h1 class="mb-6 text-3xl font-bold">Import {config.label.split(" ")[0]} Data</h1>
 
 	<Card.Root>
 		<Card.Header>
@@ -46,7 +56,7 @@
 						disabled={uploading}
 					/>
 					<p class="mt-2 text-sm text-muted-foreground">
-						Upload a semicolon-separated CSV file with daily consumption data
+						Upload a semicolon-separated CSV file with daily {config.unit} consumption data
 					</p>
 				</div>
 
@@ -79,8 +89,7 @@
 						id="text"
 						name="text"
 						rows={8}
-						placeholder="Datum	El kWh
-2026-02-02 (måndag)	101,895"
+						placeholder={pasteExample}
 						required
 						disabled={pasting}
 					/>

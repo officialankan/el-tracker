@@ -1,14 +1,16 @@
 import type { PageServerLoad } from "./$types";
 import { db } from "$lib/server/db";
 import { consumption } from "$lib/server/db/schema";
-import { and, gte, lt, sql, type SQL } from "drizzle-orm";
+import { and, eq, gte, lt, sql, type SQL } from "drizzle-orm";
+import type { ResourceType } from "$lib/resource";
 
 function buildPeriodFilter(
 	period: string,
 	yearParam: number,
 	monthParam: number,
 	minYear: number,
-	maxYear: number
+	maxYear: number,
+	resource: ResourceType
 ): { filter: SQL | undefined; validYear: boolean; validMonth: boolean } {
 	const validYear = !isNaN(yearParam) && yearParam >= minYear && yearParam <= maxYear;
 	const validMonth = !isNaN(monthParam) && monthParam >= 1 && monthParam <= 12;
@@ -30,10 +32,16 @@ function buildPeriodFilter(
 		}
 	}
 
+	const resourceFilter = eq(consumption.resourceType, resource);
+
 	const filter =
 		startDate && endDate
-			? and(gte(consumption.timestamp, startDate), lt(consumption.timestamp, endDate))
-			: undefined;
+			? and(
+					resourceFilter,
+					gte(consumption.timestamp, startDate),
+					lt(consumption.timestamp, endDate)
+				)
+			: resourceFilter;
 
 	return { filter, validYear, validMonth };
 }
@@ -72,7 +80,9 @@ async function queryMonthOfYear(periodFilter: SQL | undefined) {
 	return Array.from({ length: 12 }, (_, i) => monthMap.get(i + 1) ?? null);
 }
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
+	const resource = locals.resource;
+
 	// Read period filter params
 	const period = url.searchParams.get("period") ?? "all";
 	const yearParam = parseInt(url.searchParams.get("year") ?? "");
@@ -89,7 +99,8 @@ export const load: PageServerLoad = async ({ url }) => {
 			minYear: sql<number>`cast(strftime('%Y', MIN(${consumption.timestamp})) as integer)`,
 			maxYear: sql<number>`cast(strftime('%Y', MAX(${consumption.timestamp})) as integer)`
 		})
-		.from(consumption);
+		.from(consumption)
+		.where(eq(consumption.resourceType, resource));
 
 	const minYear = yearRange[0]?.minYear ?? new Date().getFullYear();
 	const maxYear = yearRange[0]?.maxYear ?? new Date().getFullYear();
@@ -101,7 +112,8 @@ export const load: PageServerLoad = async ({ url }) => {
 		yearParam,
 		monthParam,
 		minYear,
-		maxYear
+		maxYear,
+		resource
 	);
 
 	const dayOfWeekLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -120,9 +132,11 @@ export const load: PageServerLoad = async ({ url }) => {
 		"Dec"
 	];
 
-	// Run primary queries
+	// Run primary queries — skip day-of-week for water
 	const [dayOfWeekValues, monthOfYearValues] = await Promise.all([
-		queryDayOfWeek(periodFilter),
+		resource === "water"
+			? Promise.resolve(Array(7).fill(null) as (number | null)[])
+			: queryDayOfWeek(periodFilter),
 		queryMonthOfYear(periodFilter)
 	]);
 
@@ -140,13 +154,14 @@ export const load: PageServerLoad = async ({ url }) => {
 			compareYearParam,
 			compareMonthParam,
 			minYear,
-			maxYear
+			maxYear,
+			resource
 		);
 
 		// Only run comparison if the filter is valid (or "all" which has no filter)
-		if (compareFilter || comparePeriod === "all") {
+		if (compareFilter) {
 			[comparisonDayOfWeek, comparisonMonthOfYear] = await Promise.all([
-				queryDayOfWeek(compareFilter),
+				resource === "water" ? Promise.resolve(null) : queryDayOfWeek(compareFilter),
 				queryMonthOfYear(compareFilter)
 			]);
 
@@ -165,13 +180,16 @@ export const load: PageServerLoad = async ({ url }) => {
 	let heatmapFilter = periodFilter;
 	let months = 3;
 
-	if (!periodFilter) {
+	if (period === "all") {
 		months = parseInt(url.searchParams.get("months") ?? "3");
 		if (isNaN(months) || months <= 0) months = 3;
 		const cutoffDate = new Date();
 		cutoffDate.setMonth(cutoffDate.getMonth() - months);
 		const cutoffStr = cutoffDate.toISOString().split("T")[0];
-		heatmapFilter = gte(consumption.timestamp, `${cutoffStr}T00:00:00`);
+		heatmapFilter = and(
+			eq(consumption.resourceType, resource),
+			gte(consumption.timestamp, `${cutoffStr}T00:00:00`)
+		);
 	}
 
 	const heatmapData = await db
@@ -201,6 +219,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		period: periodFilter ? period : "all",
 		year: validYear ? yearParam : null,
 		month: !isNaN(monthParam) && monthParam >= 1 && monthParam <= 12 ? monthParam : null,
-		availableYears
+		availableYears,
+		resource
 	};
 };

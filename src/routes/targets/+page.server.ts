@@ -11,7 +11,8 @@ function todayString(): string {
 	return new Date().toISOString().split("T")[0];
 }
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals }) => {
+	const resource = locals.resource;
 	const today = todayString();
 
 	// For each period type, get the active target (most recent valid_from <= today)
@@ -26,21 +27,32 @@ export const load: PageServerLoad = async () => {
 		const result = await db
 			.select()
 			.from(targets)
-			.where(and(eq(targets.periodType, periodType), lte(targets.validFrom, today)))
+			.where(
+				and(
+					eq(targets.periodType, periodType),
+					eq(targets.resourceType, resource),
+					lte(targets.validFrom, today)
+				)
+			)
 			.orderBy(desc(targets.validFrom))
 			.limit(1);
 
 		activeTargets[periodType] = result[0] ?? null;
 	}
 
-	// Get all targets for history table
-	const allTargets = await db.select().from(targets).orderBy(desc(targets.validFrom));
+	// Get all targets for history table (filtered by resource)
+	const allTargets = await db
+		.select()
+		.from(targets)
+		.where(eq(targets.resourceType, resource))
+		.orderBy(desc(targets.validFrom));
 
 	return { activeTargets, allTargets };
 };
 
 export const actions = {
-	create: async ({ request }) => {
+	create: async ({ request, locals }) => {
+		const resource = locals.resource;
 		const formData = await request.formData();
 		const periodType = formData.get("periodType") as string;
 		const kwhTargetStr = formData.get("kwhTarget") as string;
@@ -63,7 +75,8 @@ export const actions = {
 			await db.insert(targets).values({
 				periodType,
 				kwhTarget,
-				validFrom
+				validFrom,
+				resourceType: resource
 			});
 		} catch {
 			return fail(500, { error: "Failed to create target. Please try again." });

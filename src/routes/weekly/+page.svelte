@@ -116,6 +116,7 @@
 					target={showTarget ? data.target : null}
 					{periodLabel}
 					subUnitLabel="day"
+					unit="kWh"
 				/>
 			</div>
 		</div>

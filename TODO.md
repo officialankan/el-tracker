@@ -11,9 +11,12 @@
 - [x] in the patterns pagae after implementing the TODO above, implement a feature that lets the user compare
       patterns between two data source periods. like how the weekday pattern compares between two specific months.
 - [x] in the patterns page heat map add a "1 month" view
-- [ ] we now have analysis for **electric** consumption. i can access my **water** consumption data the same
+- [x] we now have analysis for **electric** consumption. i can access my **water** consumption data the same
       way. is it possible to toggle and do every analysis (view) but with water instead? should be straightforward and only require us to change label on y axes and tooltips. i think it would be neat to in the top menu bar where we now have "el tracker" we simply add a toggle to it so it can switch to "h2o tracker" and a new icon.
+- [ ] **test water tracking**: import a water CSV file, verify toggle switches between El/H2O modes,
+      check that monthly/yearly/patterns views show liters, weekly redirects to monthly, targets work per resource,
+      and day-of-week chart is hidden in patterns for water
 - [ ] in the patterns page when we select a specific month as a period, the plot "average by month" becomes irrelevant, so we should probably hide that if we are viewing a certain month.
 - [ ] like the TODO above, the heatmap becomes a bit weird when we select a certain month as a period since the heatmap looks hard-coded to display severals months. can we fix it so that it updates accordingly? like when we select a specific month as a period then the heatmap should show the data as it is currently, but use the full width etc and have the "x axis" update to only show that months weeks.
-- [ ] much like the TODO above, some graphs in the patterns page are a bit obsolete when using the comparing periods feature. maybe put the "compare with" feature in a separate tab inside the patterns page so that it becomes a bit cleaner. 
+- [ ] much like the TODO above, some graphs in the patterns page are a bit obsolete when using the comparing periods feature. maybe put the "compare with" feature in a separate tab inside the patterns page so that it becomes a bit cleaner.
 - [ ] in the stats card, create a tooltip that can be activated by clicking a info icon by the "vs rolling average" stat that then explains what we mean by vs rolling average (i.e. what that rolling average is based on and what the number shows

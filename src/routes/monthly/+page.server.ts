@@ -4,7 +4,8 @@ import { consumption, targets } from "$lib/server/db/schema";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { getCurrentMonth, getMonthDateRange, navigateMonth } from "$lib/utils/date-utils";
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
+	const resource = locals.resource;
 	// Get month from URL params or default to current month
 	const current = getCurrentMonth();
 	let year = parseInt(url.searchParams.get("year") ?? String(current.year));
@@ -23,6 +24,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		.from(consumption)
 		.where(
 			and(
+				eq(consumption.resourceType, resource),
 				gte(consumption.timestamp, `${startDate}T00:00:00`),
 				lte(consumption.timestamp, `${endDate}T23:59:59`)
 			)
@@ -75,6 +77,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		.from(consumption)
 		.where(
 			and(
+				eq(consumption.resourceType, resource),
 				gte(consumption.timestamp, `${rollingStartDate}T00:00:00`),
 				lte(consumption.timestamp, `${rollingEndDate}T23:59:59`)
 			)
@@ -99,6 +102,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		.from(consumption)
 		.where(
 			and(
+				eq(consumption.resourceType, resource),
 				gte(consumption.timestamp, `${prevMonthDates[0]}T00:00:00`),
 				lte(consumption.timestamp, `${prevMonthDates[prevMonthDates.length - 1]}T23:59:59`)
 			)
@@ -126,6 +130,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			.from(consumption)
 			.where(
 				and(
+					eq(consumption.resourceType, resource),
 					gte(consumption.timestamp, `${compMonthDates[0]}T00:00:00`),
 					lte(consumption.timestamp, `${compMonthDates[compMonthDates.length - 1]}T23:59:59`)
 				)
@@ -145,7 +150,13 @@ export const load: PageServerLoad = async ({ url }) => {
 	const activeTarget = await db
 		.select()
 		.from(targets)
-		.where(and(eq(targets.periodType, "monthly"), lte(targets.validFrom, today)))
+		.where(
+			and(
+				eq(targets.periodType, "monthly"),
+				eq(targets.resourceType, resource),
+				lte(targets.validFrom, today)
+			)
+		)
 		.orderBy(desc(targets.validFrom))
 		.limit(1);
 

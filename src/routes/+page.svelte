@@ -1,15 +1,21 @@
 <script lang="ts">
+	import { page } from "$app/state";
 	import * as Card from "$lib/components/ui/card";
 	import { Button } from "$lib/components/ui/button";
 	import { BarChart3, Target, TrendingUp, Upload } from "@lucide/svelte";
+	import { RESOURCE_CONFIG, type ResourceType } from "$lib/resource";
+
+	const resource = $derived(page.data.resource as ResourceType);
+	const config = $derived(RESOURCE_CONFIG[resource]);
+	const showWeekly = $derived(resource !== "water");
 </script>
 
 <div class="container mx-auto max-w-2xl space-y-8 p-6">
 	<div>
-		<h1 class="mb-2 text-3xl font-bold">Electricity Consumption Tracker</h1>
+		<h1 class="mb-2 text-3xl font-bold">{config.label}</h1>
 		<p class="text-muted-foreground">
-			Track and analyze your household electricity consumption with powerful visualizations and
-			insights.
+			Track and analyze your household {resource === "water" ? "water" : "electricity"} consumption with
+			powerful visualizations and insights.
 		</p>
 	</div>
 
@@ -20,25 +26,27 @@
 					<Upload class="h-5 w-5" />
 					<Card.Title>Import Data</Card.Title>
 				</div>
-				<Card.Description>Upload your electricity consumption CSV file</Card.Description>
+				<Card.Description>Upload your {config.unit} consumption CSV file</Card.Description>
 			</Card.Header>
 			<Card.Content>
 				<Button href="/import" class="w-full">Go to Import</Button>
 			</Card.Content>
 		</Card.Root>
 
-		<Card.Root class="transition-shadow hover:shadow-md">
-			<Card.Header>
-				<div class="flex items-center gap-2">
-					<BarChart3 class="h-5 w-5" />
-					<Card.Title>Weekly Analysis</Card.Title>
-				</div>
-				<Card.Description>View weekly consumption patterns and trends</Card.Description>
-			</Card.Header>
-			<Card.Content>
-				<Button href="/weekly" class="w-full">View Weekly</Button>
-			</Card.Content>
-		</Card.Root>
+		{#if showWeekly}
+			<Card.Root class="transition-shadow hover:shadow-md">
+				<Card.Header>
+					<div class="flex items-center gap-2">
+						<BarChart3 class="h-5 w-5" />
+						<Card.Title>Weekly Analysis</Card.Title>
+					</div>
+					<Card.Description>View weekly consumption patterns and trends</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					<Button href="/weekly" class="w-full">View Weekly</Button>
+				</Card.Content>
+			</Card.Root>
+		{/if}
 
 		<Card.Root class="transition-shadow hover:shadow-md">
 			<Card.Header>

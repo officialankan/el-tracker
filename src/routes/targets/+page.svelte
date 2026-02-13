@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from "$app/forms";
+	import { page } from "$app/state";
 	import * as Card from "$lib/components/ui/card";
 	import * as Table from "$lib/components/ui/table";
 	import * as Select from "$lib/components/ui/select";
@@ -8,9 +9,13 @@
 	import { Label } from "$lib/components/ui/label";
 	import { Separator } from "$lib/components/ui/separator";
 	import { Target, Trash2 } from "@lucide/svelte";
+	import { RESOURCE_CONFIG, type ResourceType } from "$lib/resource";
 	import type { ActionData, PageData } from "./$types";
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	const resource = $derived(page.data.resource as ResourceType);
+	const unit = $derived(RESOURCE_CONFIG[resource].unit);
 
 	type PeriodType = "daily" | "weekly" | "monthly" | "yearly";
 	const periodTypes: PeriodType[] = ["daily", "weekly", "monthly", "yearly"];
@@ -56,7 +61,7 @@
 					</Card.Header>
 					<Card.Content>
 						{#if target}
-							<p class="text-2xl font-bold">{formatKwh(target.kwhTarget)} kWh</p>
+							<p class="text-2xl font-bold">{formatKwh(target.kwhTarget)} {unit}</p>
 							<p class="text-sm text-muted-foreground">
 								Giltig från {target.validFrom}
 							</p>
@@ -94,7 +99,7 @@
 					</div>
 
 					<div class="space-y-2">
-						<Label for="kwh-target">Target (kWh)</Label>
+						<Label for="kwh-target">Target ({unit})</Label>
 						<Input
 							id="kwh-target"
 							name="kwhTarget"
@@ -132,7 +137,7 @@
 					<Table.Header>
 						<Table.Row>
 							<Table.Head>Period Type</Table.Head>
-							<Table.Head>Target (kWh)</Table.Head>
+							<Table.Head>Target ({unit})</Table.Head>
 							<Table.Head>Valid From</Table.Head>
 							<Table.Head>Status</Table.Head>
 							<Table.Head class="text-right">Actions</Table.Head>

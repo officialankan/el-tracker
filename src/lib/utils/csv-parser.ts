@@ -1,3 +1,5 @@
+import type { ResourceType } from "$lib/resource";
+
 export interface ConsumptionRow {
 	timestamp: string;
 	kwh: number;
@@ -6,6 +8,31 @@ export interface ConsumptionRow {
 export interface ParseResult {
 	rows: ConsumptionRow[];
 	errors: Array<{ line: number; error: string }>;
+	resourceType: ResourceType;
+}
+
+/**
+ * Detect resource type from header line
+ */
+function detectResourceType(headerLine: string): ResourceType {
+	if (/vatten/i.test(headerLine)) return "water";
+	return "el";
+}
+
+/**
+ * Parse a numeric value, handling Swedish formatting.
+ * Water values use space as thousands separator (e.g. "1 000").
+ * Electricity values use comma as decimal separator (e.g. "101,009").
+ */
+function parseValue(raw: string, resourceType: ResourceType): number {
+	let cleaned = raw.trim();
+	if (resourceType === "water") {
+		// Remove space-as-thousands-separator, then handle comma decimal
+		cleaned = cleaned.replace(/\s/g, "").replace(",", ".");
+	} else {
+		cleaned = cleaned.replace(",", ".");
+	}
+	return parseFloat(cleaned);
 }
 
 /**
@@ -22,6 +49,9 @@ export function parseConsumptionCSV(csvText: string): ParseResult {
 
 	const lines = text.split("\n").map((line) => line.trim());
 
+	const resourceType = lines.length > 0 ? detectResourceType(lines[0]) : "el";
+	const unit = resourceType === "water" ? "L" : "kWh";
+
 	// Skip header row and empty lines
 	for (let i = 1; i < lines.length; i++) {
 		const line = lines[i];
@@ -37,7 +67,7 @@ export function parseConsumptionCSV(csvText: string): ParseResult {
 			}
 
 			const dateStr = fields[0].trim();
-			const kwhStr = fields[1].trim();
+			const valueStr = fields[1].trim();
 
 			// Validate date format (YYYY-MM-DD)
 			if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -45,11 +75,10 @@ export function parseConsumptionCSV(csvText: string): ParseResult {
 				continue;
 			}
 
-			// Convert Swedish decimal (comma) to dot and parse
-			const kwh = parseFloat(kwhStr.replace(",", "."));
+			const kwh = parseValue(valueStr, resourceType);
 
 			if (isNaN(kwh)) {
-				errors.push({ line: i + 1, error: `Invalid kWh value: ${kwhStr}` });
+				errors.push({ line: i + 1, error: `Invalid ${unit} value: ${valueStr}` });
 				continue;
 			}
 
@@ -65,7 +94,7 @@ export function parseConsumptionCSV(csvText: string): ParseResult {
 		}
 	}
 
-	return { rows, errors };
+	return { rows, errors, resourceType };
 }
 
 /**
@@ -78,6 +107,9 @@ export function parsePastedConsumption(text: string): ParseResult {
 	const errors: Array<{ line: number; error: string }> = [];
 
 	const lines = text.split("\n").map((line) => line.trim());
+
+	const resourceType = lines.length > 0 ? detectResourceType(lines[0]) : "el";
+	const unit = resourceType === "water" ? "L" : "kWh";
 
 	// Skip header row and empty lines
 	for (let i = 1; i < lines.length; i++) {
@@ -100,11 +132,10 @@ export function parsePastedConsumption(text: string): ParseResult {
 				continue;
 			}
 
-			// Convert Swedish decimal (comma) to dot and parse
-			const kwh = parseFloat(fields[1].trim().replace(",", "."));
+			const kwh = parseValue(fields[1], resourceType);
 
 			if (isNaN(kwh)) {
-				errors.push({ line: i + 1, error: `Invalid kWh value: ${fields[1].trim()}` });
+				errors.push({ line: i + 1, error: `Invalid ${unit} value: ${fields[1].trim()}` });
 				continue;
 			}
 
@@ -118,5 +149,5 @@ export function parsePastedConsumption(text: string): ParseResult {
 		}
 	}
 
-	return { rows, errors };
+	return { rows, errors, resourceType };
 }

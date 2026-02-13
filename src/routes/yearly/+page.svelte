@@ -1,14 +1,19 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
+	import { page } from "$app/state";
 	import { Button } from "$lib/components/ui/button";
 	import { Toggle } from "$lib/components/ui/toggle";
 	import StatsCard from "$lib/components/StatsCard.svelte";
 	import ConsumptionBarChart from "$lib/components/ConsumptionBarChart.svelte";
 	import ComparisonSelector from "$lib/components/ComparisonSelector.svelte";
 	import { formatShortMonth } from "$lib/utils/date-utils";
+	import { RESOURCE_CONFIG, type ResourceType } from "$lib/resource";
 	import { ChevronLeft, ChevronRight, Target, TrendingUp } from "@lucide/svelte";
 
 	let { data }: { data: PageData } = $props();
+
+	const resource = $derived(page.data.resource as ResourceType);
+	const unit = $derived(RESOURCE_CONFIG[resource].unit);
 
 	let showTarget = $state(true);
 	let showCumulative = $state(true);
@@ -103,6 +108,7 @@
 					projection={data.stats.projection}
 					{periodLabel}
 					subUnitLabel="month"
+					{unit}
 				/>
 			</div>
 		</div>

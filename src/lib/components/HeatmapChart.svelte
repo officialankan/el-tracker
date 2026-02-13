@@ -4,9 +4,10 @@
 
 	interface Props {
 		data: { date: string; kwh: number }[];
+		unit?: string;
 	}
 
-	let { data }: Props = $props();
+	let { data, unit = "kWh" }: Props = $props();
 
 	const dayLabels = ["Mon", "", "Wed", "", "Fri", "", "Sun"];
 
@@ -164,7 +165,7 @@
 							role="gridcell"
 							tabindex="-1"
 							aria-label="{cell.date}: {cell.kwh !== null
-								? `${Math.round(cell.kwh)} kWh`
+								? `${Math.round(cell.kwh)} ${unit}`
 								: 'no data'}"
 							onmouseenter={(e) => handleMouseEnter(e, cell)}
 							onmouseleave={handleMouseLeave}
@@ -184,7 +185,7 @@
 			style:transform="translate(-50%, -100%)"
 		>
 			<p class="font-medium">{formatDate(hoveredCell.date)}</p>
-			<p>{Math.round(hoveredCell.kwh)} kWh</p>
+			<p>{Math.round(hoveredCell.kwh)} {unit}</p>
 		</div>
 	{/if}
 

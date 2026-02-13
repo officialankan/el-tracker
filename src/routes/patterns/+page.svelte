@@ -7,8 +7,12 @@
 	import { TrendingUp } from "@lucide/svelte";
 	import { goto } from "$app/navigation";
 	import { resolve } from "$app/paths";
+	import { RESOURCE_CONFIG } from "$lib/resource";
 
 	let { data }: { data: PageData } = $props();
+
+	const config = $derived(RESOURCE_CONFIG[data.resource]);
+	const showDayOfWeek = $derived(data.resource !== "water");
 
 	const monthsOptions = [1, 3, 6, 12];
 	const monthNames = [
@@ -236,22 +240,24 @@
 			</p>
 		</div>
 	{:else}
-		<!-- Day-of-week averages -->
-		<Card.Root>
-			<Card.Header>
-				<Card.Title>Average by Day of Week</Card.Title>
-				<Card.Description>Average hourly consumption for each day of the week</Card.Description>
-			</Card.Header>
-			<Card.Content>
-				<ConsumptionBarChart
-					labels={data.dayOfWeek.labels}
-					data={data.dayOfWeek.values}
-					yLabel="Avg kWh"
-					comparisonData={data.comparisonDayOfWeek ?? undefined}
-					comparisonLabel={comparisonLabel || undefined}
-				/>
-			</Card.Content>
-		</Card.Root>
+		<!-- Day-of-week averages (hidden for water) -->
+		{#if showDayOfWeek}
+			<Card.Root>
+				<Card.Header>
+					<Card.Title>Average by Day of Week</Card.Title>
+					<Card.Description>Average hourly consumption for each day of the week</Card.Description>
+				</Card.Header>
+				<Card.Content>
+					<ConsumptionBarChart
+						labels={data.dayOfWeek.labels}
+						data={data.dayOfWeek.values}
+						yLabel="Avg {config.unit}"
+						comparisonData={data.comparisonDayOfWeek ?? undefined}
+						comparisonLabel={comparisonLabel || undefined}
+					/>
+				</Card.Content>
+			</Card.Root>
+		{/if}
 
 		<!-- Month-of-year averages -->
 		<Card.Root>
@@ -263,7 +269,7 @@
 				<ConsumptionBarChart
 					labels={data.monthOfYear.labels}
 					data={data.monthOfYear.values}
-					yLabel="Avg kWh"
+					yLabel="Avg {config.unit}"
 					comparisonData={data.comparisonMonthOfYear ?? undefined}
 					comparisonLabel={comparisonLabel || undefined}
 				/>
@@ -303,7 +309,7 @@
 				</div>
 			</Card.Header>
 			<Card.Content>
-				<HeatmapChart data={data.heatmap} />
+				<HeatmapChart data={data.heatmap} unit={config.unit} />
 			</Card.Content>
 		</Card.Root>
 	{/if}

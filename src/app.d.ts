@@ -3,7 +3,9 @@
 declare global {
 	namespace App {
 		// interface Error {}
-		// interface Locals {}
+		interface Locals {
+			resource: import("$lib/resource").ResourceType;
+		}
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}

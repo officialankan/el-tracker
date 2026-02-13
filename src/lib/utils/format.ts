@@ -3,16 +3,27 @@
  */
 
 /**
+ * Format a numeric value with unit suffix
+ * @param value Number to format
+ * @param unit Unit string to append (e.g. "kWh", "L")
+ * @param decimals Number of decimal places (default: 0)
+ * @returns Formatted string with unit suffix
+ */
+export function formatValue(value: number, unit: string, decimals = 0): string {
+	const fixed = value.toFixed(decimals);
+	const [intPart, decPart] = fixed.split(".");
+	const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+	return `${decPart ? `${formatted}.${decPart}` : formatted} ${unit}`;
+}
+
+/**
  * Format kWh value with appropriate precision
  * @param kwh Number to format
- * @param decimals Number of decimal places (default: 2)
+ * @param decimals Number of decimal places (default: 0)
  * @returns Formatted string with "kWh" suffix
  */
 export function formatKWh(kwh: number, decimals = 0): string {
-	const fixed = kwh.toFixed(decimals);
-	const [intPart, decPart] = fixed.split(".");
-	const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
-	return `${decPart ? `${formatted}.${decPart}` : formatted} kWh`;
+	return formatValue(kwh, "kWh", decimals);
 }
 
 /**

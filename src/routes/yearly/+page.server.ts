@@ -4,7 +4,8 @@ import { consumption, targets } from "$lib/server/db/schema";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { getCurrentYear, getYearMonths, getMonthDateRange } from "$lib/utils/date-utils";
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
+	const resource = locals.resource;
 	const currentYear = getCurrentYear();
 	let year = parseInt(url.searchParams.get("year") ?? String(currentYear));
 	if (isNaN(year)) year = currentYear;
@@ -25,6 +26,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			.from(consumption)
 			.where(
 				and(
+					eq(consumption.resourceType, resource),
 					gte(consumption.timestamp, `${startDate}T00:00:00`),
 					lte(consumption.timestamp, `${endDate}T23:59:59`)
 				)
@@ -56,6 +58,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		.from(consumption)
 		.where(
 			and(
+				eq(consumption.resourceType, resource),
 				gte(consumption.timestamp, `${yearStart}T00:00:00`),
 				lte(consumption.timestamp, `${yearEnd}T23:59:59`)
 			)
@@ -85,6 +88,7 @@ export const load: PageServerLoad = async ({ url }) => {
 				.from(consumption)
 				.where(
 					and(
+						eq(consumption.resourceType, resource),
 						gte(consumption.timestamp, `${ryStartDate}T00:00:00`),
 						lte(consumption.timestamp, `${ryEndDate}T23:59:59`)
 					)
@@ -122,6 +126,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			.from(consumption)
 			.where(
 				and(
+					eq(consumption.resourceType, resource),
 					gte(consumption.timestamp, `${startDate}T00:00:00`),
 					lte(consumption.timestamp, `${endDate}T23:59:59`)
 				)
@@ -156,6 +161,7 @@ export const load: PageServerLoad = async ({ url }) => {
 				.from(consumption)
 				.where(
 					and(
+						eq(consumption.resourceType, resource),
 						gte(consumption.timestamp, `${startDate}T00:00:00`),
 						lte(consumption.timestamp, `${endDate}T23:59:59`)
 					)
@@ -171,7 +177,13 @@ export const load: PageServerLoad = async ({ url }) => {
 	const activeTarget = await db
 		.select()
 		.from(targets)
-		.where(and(eq(targets.periodType, "yearly"), lte(targets.validFrom, today)))
+		.where(
+			and(
+				eq(targets.periodType, "yearly"),
+				eq(targets.resourceType, resource),
+				lte(targets.validFrom, today)
+			)
+		)
 		.orderBy(desc(targets.validFrom))
 		.limit(1);
 

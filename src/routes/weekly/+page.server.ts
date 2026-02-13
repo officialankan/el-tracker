@@ -3,8 +3,16 @@ import { db } from "$lib/server/db";
 import { consumption, targets } from "$lib/server/db/schema";
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { getCurrentWeek, getWeekDateRange, navigateWeek } from "$lib/utils/date-utils";
+import { redirect } from "@sveltejs/kit";
 
-export const load: PageServerLoad = async ({ url }) => {
+export const load: PageServerLoad = async ({ url, locals }) => {
+	const resource = locals.resource;
+
+	// Water data is meaningless at weekly granularity
+	if (resource === "water") {
+		redirect(302, "/monthly");
+	}
+
 	// Get week from URL params or default to current week
 	const current = getCurrentWeek();
 	let year = parseInt(url.searchParams.get("year") ?? String(current.year));
@@ -33,6 +41,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		.from(consumption)
 		.where(
 			and(
+				eq(consumption.resourceType, resource),
 				gte(consumption.timestamp, `${startDate}T00:00:00`),
 				lte(consumption.timestamp, `${endDate}T23:59:59`)
 			)
@@ -71,6 +80,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		.from(consumption)
 		.where(
 			and(
+				eq(consumption.resourceType, resource),
 				gte(consumption.timestamp, `${rollingStartDate}T00:00:00`),
 				lte(consumption.timestamp, `${rollingEndDate}T23:59:59`)
 			)
@@ -86,6 +96,7 @@ export const load: PageServerLoad = async ({ url }) => {
 		.from(consumption)
 		.where(
 			and(
+				eq(consumption.resourceType, resource),
 				gte(consumption.timestamp, `${prevWeekDates[0]}T00:00:00`),
 				lte(consumption.timestamp, `${prevWeekDates[6]}T23:59:59`)
 			)
@@ -113,6 +124,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			.from(consumption)
 			.where(
 				and(
+					eq(consumption.resourceType, resource),
 					gte(consumption.timestamp, `${compWeekDates[0]}T00:00:00`),
 					lte(consumption.timestamp, `${compWeekDates[6]}T23:59:59`)
 				)
@@ -132,7 +144,13 @@ export const load: PageServerLoad = async ({ url }) => {
 	const activeTarget = await db
 		.select()
 		.from(targets)
-		.where(and(eq(targets.periodType, "weekly"), lte(targets.validFrom, today)))
+		.where(
+			and(
+				eq(targets.periodType, "weekly"),
+				eq(targets.resourceType, resource),
+				lte(targets.validFrom, today)
+			)
+		)
 		.orderBy(desc(targets.validFrom))
 		.limit(1);
 

@@ -1,5 +1,5 @@
 import type { Actions } from "./$types";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "$lib/server/db";
 import { consumption } from "$lib/server/db/schema";
 import { parseConsumptionCSV, parsePastedConsumption } from "$lib/utils/csv-parser";
@@ -10,23 +10,27 @@ async function insertRows(parseResult: ParseResult) {
 	let inserted = 0;
 	let updated = 0;
 	let errors = parseResult.errors.length;
+	const resourceType = parseResult.resourceType;
 
 	for (const row of parseResult.rows) {
 		try {
 			const existing = await db
 				.select({ kwh: consumption.kwh })
 				.from(consumption)
-				.where(eq(consumption.timestamp, row.timestamp))
+				.where(
+					and(eq(consumption.timestamp, row.timestamp), eq(consumption.resourceType, resourceType))
+				)
 				.get();
 
 			await db
 				.insert(consumption)
 				.values({
 					timestamp: row.timestamp,
-					kwh: row.kwh
+					kwh: row.kwh,
+					resourceType
 				})
 				.onConflictDoUpdate({
-					target: consumption.timestamp,
+					target: [consumption.timestamp, consumption.resourceType],
 					set: { kwh: row.kwh }
 				})
 				.run();

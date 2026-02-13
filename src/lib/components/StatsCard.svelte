@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Card from "$lib/components/ui/card";
-	import { formatKWh, formatPercent } from "$lib/utils/format";
+	import { formatValue, formatPercent } from "$lib/utils/format";
 
 	interface Props {
 		total: number;
@@ -13,6 +13,7 @@
 		projection?: number | null;
 		periodLabel: string;
 		subUnitLabel: string;
+		unit?: string;
 	}
 
 	let {
@@ -25,7 +26,8 @@
 		target,
 		projection,
 		periodLabel,
-		subUnitLabel
+		subUnitLabel,
+		unit = "kWh"
 	}: Props = $props();
 
 	const changeColor = $derived(
@@ -34,6 +36,10 @@
 	const targetColor = $derived(
 		target && total > target.value ? "text-red-600" : target ? "text-green-600" : ""
 	);
+
+	function fmt(value: number): string {
+		return formatValue(value, unit);
+	}
 </script>
 
 <Card.Root>
@@ -45,18 +51,18 @@
 		<div class="grid gap-4 md:grid-cols-2">
 			<div>
 				<p class="text-sm text-muted-foreground">Total</p>
-				<p class="text-2xl font-bold">{formatKWh(total)}</p>
+				<p class="text-2xl font-bold">{fmt(total)}</p>
 			</div>
 
 			<div>
 				<p class="text-sm text-muted-foreground">Average per {subUnitLabel}</p>
-				<p class="text-2xl font-bold">{formatKWh(average)}</p>
+				<p class="text-2xl font-bold">{fmt(average)}</p>
 			</div>
 
 			{#if peakDay}
 				<div>
 					<p class="text-sm text-muted-foreground">Peak {subUnitLabel}</p>
-					<p class="text-2xl font-bold">{formatKWh(peakDay.value)}</p>
+					<p class="text-2xl font-bold">{fmt(peakDay.value)}</p>
 				</div>
 			{/if}
 
@@ -64,7 +70,7 @@
 				<div>
 					<p class="text-sm text-muted-foreground">vs. Rolling Average</p>
 					<p class="text-2xl font-bold">
-						{formatKWh(total - rollingAverage)}
+						{fmt(total - rollingAverage)}
 						<span class="text-sm {total > rollingAverage ? 'text-red-600' : 'text-green-600'}">
 							({formatPercent(((total - rollingAverage) / rollingAverage) * 100)})
 						</span>
@@ -76,7 +82,7 @@
 				<div>
 					<p class="text-sm text-muted-foreground">vs. Previous Period</p>
 					<p class="text-2xl font-bold">
-						{formatKWh(total - previousTotal)}
+						{fmt(total - previousTotal)}
 						<span class="text-sm {changeColor}">
 							({formatPercent(percentChange)})
 						</span>
@@ -88,7 +94,7 @@
 				<div>
 					<p class="text-sm text-muted-foreground">vs. Target</p>
 					<p class="text-2xl font-bold">
-						{formatKWh(total - target.value)}
+						{fmt(total - target.value)}
 						<span class="text-sm {targetColor}">
 							({formatPercent(((total - target.value) / target.value) * 100)})
 						</span>
@@ -99,7 +105,7 @@
 			{#if projection}
 				<div>
 					<p class="text-sm text-muted-foreground">Projection</p>
-					<p class="text-2xl font-bold">{formatKWh(projection)}</p>
+					<p class="text-2xl font-bold">{fmt(projection)}</p>
 				</div>
 			{/if}
 		</div>

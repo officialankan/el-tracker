@@ -2,11 +2,12 @@
 	import "./layout.css";
 	import favicon from "$lib/assets/favicon.svg";
 	import NavBar from "$lib/components/NavBar.svelte";
+	import type { LayoutData } from "./$types";
 
-	let { children } = $props();
+	let { data, children }: { data: LayoutData; children: import("svelte").Snippet } = $props();
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
-<NavBar />
+<NavBar resource={data.resource} />
 {@render children()}
