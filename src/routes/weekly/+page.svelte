@@ -30,10 +30,12 @@
 			? `Week ${data.comparison.week}, ${data.comparison.year}`
 			: "Previous Week"
 	);
+
+	const hasData = $derived(data.dailyValues.some((v) => v !== null));
 </script>
 
 <div class="container mx-auto space-y-6 p-6">
-	<div class="flex items-center justify-between">
+	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 		<div>
 			<h1 class="text-3xl font-bold">Weekly Consumption</h1>
 			<p class="text-muted-foreground">{dateRangeLabel}</p>
@@ -76,44 +78,54 @@
 		{comparisonLabel}
 	/>
 
-	<div class="grid gap-6 lg:grid-cols-2">
-		<div class="lg:col-span-2">
-			{#if data.target}
-				<div class="mb-2 flex items-center gap-1">
-					<Toggle variant="outline" size="sm" bind:pressed={showTarget}>
-						<Target class="h-4 w-4" />
-						Target
-					</Toggle>
-					<Toggle variant="outline" size="sm" bind:pressed={showCumulative}>
-						<TrendingUp class="h-4 w-4" />
-						Cumulative
-					</Toggle>
-				</div>
-			{/if}
-			<ConsumptionBarChart
-				{labels}
-				data={data.dailyValues}
-				comparisonData={data.comparisonDailyValues}
-				{comparisonLabel}
-				targetLine={data.target?.value}
-				{showTarget}
-				{showCumulative}
-				yLabel="This Week"
-			/>
-		</div>
+	{#if hasData}
+		<div class="grid gap-6 lg:grid-cols-2">
+			<div class="lg:col-span-2">
+				{#if data.target}
+					<div class="mb-2 flex items-center gap-1">
+						<Toggle variant="outline" size="sm" bind:pressed={showTarget}>
+							<Target class="h-4 w-4" />
+							Target
+						</Toggle>
+						<Toggle variant="outline" size="sm" bind:pressed={showCumulative}>
+							<TrendingUp class="h-4 w-4" />
+							Cumulative
+						</Toggle>
+					</div>
+				{/if}
+				<ConsumptionBarChart
+					{labels}
+					data={data.dailyValues}
+					comparisonData={data.comparisonDailyValues}
+					{comparisonLabel}
+					targetLine={data.target?.value}
+					{showTarget}
+					{showCumulative}
+					yLabel="This Week"
+				/>
+			</div>
 
-		<div class="lg:col-span-2">
-			<StatsCard
-				total={data.stats.total}
-				average={data.stats.average}
-				peakDay={data.stats.peakDay}
-				rollingAverage={data.stats.rollingAverage}
-				previousTotal={data.stats.previousTotal}
-				percentChange={data.stats.percentChange}
-				target={showTarget ? data.target : null}
-				{periodLabel}
-				subUnitLabel="day"
-			/>
+			<div class="lg:col-span-2">
+				<StatsCard
+					total={data.stats.total}
+					average={data.stats.average}
+					peakDay={data.stats.peakDay}
+					rollingAverage={data.stats.rollingAverage}
+					previousTotal={data.stats.previousTotal}
+					percentChange={data.stats.percentChange}
+					target={showTarget ? data.target : null}
+					{periodLabel}
+					subUnitLabel="day"
+				/>
+			</div>
 		</div>
-	</div>
+	{:else}
+		<div class="flex flex-col items-center justify-center rounded-lg border border-dashed py-16">
+			<p class="text-lg font-medium text-muted-foreground">No data for this period</p>
+			<p class="mt-1 text-sm text-muted-foreground">
+				<Button variant="link" href="/import" class="h-auto p-0">Import data</Button> to see consumption
+				charts.
+			</p>
+		</div>
+	{/if}
 </div>

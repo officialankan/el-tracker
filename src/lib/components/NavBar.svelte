@@ -13,7 +13,7 @@
 	];
 </script>
 
-<nav class="border-b">
+<nav class="border-b" aria-label="Main navigation">
 	<div class="container mx-auto flex items-center gap-1 px-4 py-2">
 		<a href="/" class="mr-4 flex items-center gap-2 font-semibold">
 			<Zap class="h-5 w-5" />

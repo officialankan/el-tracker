@@ -7,8 +7,10 @@ import { getCurrentMonth, getMonthDateRange, navigateMonth } from "$lib/utils/da
 export const load: PageServerLoad = async ({ url }) => {
 	// Get month from URL params or default to current month
 	const current = getCurrentMonth();
-	const year = parseInt(url.searchParams.get("year") ?? String(current.year));
-	const month = parseInt(url.searchParams.get("month") ?? String(current.month));
+	let year = parseInt(url.searchParams.get("year") ?? String(current.year));
+	let month = parseInt(url.searchParams.get("month") ?? String(current.month));
+	if (isNaN(year)) year = current.year;
+	if (isNaN(month)) month = current.month;
 
 	// Get date range for the month
 	const monthDates = getMonthDateRange(year, month);
@@ -85,8 +87,10 @@ export const load: PageServerLoad = async ({ url }) => {
 	const compareYearParam = url.searchParams.get("compare_year");
 	const compareMonthParam = url.searchParams.get("compare_month");
 	const hasCustomCompare = compareYearParam !== null && compareMonthParam !== null;
-	const compareYear = hasCustomCompare ? parseInt(compareYearParam) : prevMonth.year;
-	const compareMonth = hasCustomCompare ? parseInt(compareMonthParam) : prevMonth.month;
+	let compareYear = hasCustomCompare ? parseInt(compareYearParam) : prevMonth.year;
+	let compareMonth = hasCustomCompare ? parseInt(compareMonthParam) : prevMonth.month;
+	if (isNaN(compareYear)) compareYear = prevMonth.year;
+	if (isNaN(compareMonth)) compareMonth = prevMonth.month;
 
 	// Calculate previous month stats (always the actual previous month for stats)
 	const prevMonthDates = getMonthDateRange(prevMonth.year, prevMonth.month);

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from "$app/forms";
+	import { Button } from "$lib/components/ui/button";
 	import { Textarea } from "$lib/components/ui/textarea";
+	import * as Card from "$lib/components/ui/card";
 	import type { ActionData } from "./$types";
 
 	let { form }: { form: ActionData } = $props();
@@ -15,141 +17,140 @@
 <div class="mx-auto max-w-2xl p-6">
 	<h1 class="mb-6 text-3xl font-bold">Import Consumption Data</h1>
 
-	<div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-		<h2 class="mb-4 text-lg font-semibold">Upload CSV file</h2>
-		<form
-			method="POST"
-			action="?/upload"
-			enctype="multipart/form-data"
-			use:enhance={() => {
-				uploading = true;
-				return async ({ update }) => {
-					await update();
-					uploading = false;
-				};
-			}}
-		>
-			<div class="mb-4">
-				<label for="file" class="mb-2 block text-sm font-medium text-gray-700">
-					Select CSV file
-				</label>
-				<input
-					type="file"
-					id="file"
-					name="file"
-					accept=".csv,.txt"
-					required
-					class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-					disabled={uploading}
-				/>
-				<p class="mt-2 text-sm text-gray-500">
-					Upload a semicolon-separated CSV file with daily consumption data
-				</p>
-			</div>
-
-			<button
-				type="submit"
-				disabled={uploading}
-				class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+	<Card.Root>
+		<Card.Header>
+			<Card.Title>Upload CSV file</Card.Title>
+		</Card.Header>
+		<Card.Content>
+			<form
+				method="POST"
+				action="?/upload"
+				enctype="multipart/form-data"
+				use:enhance={() => {
+					uploading = true;
+					return async ({ update }) => {
+						await update();
+						uploading = false;
+					};
+				}}
 			>
-				{uploading ? "Uploading..." : "Upload"}
-			</button>
-		</form>
-	</div>
+				<div class="mb-4">
+					<label for="file" class="mb-2 block text-sm font-medium">Select CSV file</label>
+					<input
+						type="file"
+						id="file"
+						name="file"
+						accept=".csv,.txt"
+						required
+						class="block w-full rounded-md border px-3 py-2 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
+						disabled={uploading}
+					/>
+					<p class="mt-2 text-sm text-muted-foreground">
+						Upload a semicolon-separated CSV file with daily consumption data
+					</p>
+				</div>
 
-	<div class="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-		<h2 class="mb-4 text-lg font-semibold">Paste data</h2>
-		<form
-			method="POST"
-			action="?/paste"
-			use:enhance={() => {
-				pasting = true;
-				return async ({ update }) => {
-					await update();
-					pasting = false;
-				};
-			}}
-		>
-			<div class="mb-4">
-				<label for="text" class="mb-2 block text-sm font-medium text-gray-700">
-					Paste consumption data
-				</label>
-				<Textarea
-					id="text"
-					name="text"
-					rows={8}
-					placeholder="Datum	El kWh
+				<Button type="submit" disabled={uploading}>
+					{uploading ? "Uploading..." : "Upload"}
+				</Button>
+			</form>
+		</Card.Content>
+	</Card.Root>
+
+	<Card.Root class="mt-6">
+		<Card.Header>
+			<Card.Title>Paste data</Card.Title>
+		</Card.Header>
+		<Card.Content>
+			<form
+				method="POST"
+				action="?/paste"
+				use:enhance={() => {
+					pasting = true;
+					return async ({ update }) => {
+						await update();
+						pasting = false;
+					};
+				}}
+			>
+				<div class="mb-4">
+					<label for="text" class="mb-2 block text-sm font-medium">Paste consumption data</label>
+					<Textarea
+						id="text"
+						name="text"
+						rows={8}
+						placeholder="Datum	El kWh
 2026-02-02 (måndag)	101,895"
-					required
-					disabled={pasting}
-				/>
-				<p class="mt-2 text-sm text-gray-500">
-					Paste tab-separated data with header row (e.g. from a spreadsheet)
-				</p>
-			</div>
+						required
+						disabled={pasting}
+					/>
+					<p class="mt-2 text-sm text-muted-foreground">
+						Paste tab-separated data with header row (e.g. from a spreadsheet)
+					</p>
+				</div>
 
-			<button
-				type="submit"
-				disabled={pasting}
-				class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				{pasting ? "Importing..." : "Import"}
-			</button>
-		</form>
-	</div>
+				<Button type="submit" disabled={pasting}>
+					{pasting ? "Importing..." : "Import"}
+				</Button>
+			</form>
+		</Card.Content>
+	</Card.Root>
 
 	{#if form?.error}
-		<div class="mt-6 rounded-lg border border-red-200 bg-red-50 p-4">
-			<h2 class="mb-2 text-lg font-semibold text-red-800">Error</h2>
-			<p class="text-sm text-red-700">{form.error}</p>
+		<div class="mt-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+			<h2 class="mb-2 text-lg font-semibold text-destructive">Error</h2>
+			<p class="text-sm text-destructive">{form.error}</p>
 		</div>
 	{/if}
 
 	{#if form?.success}
-		<div class="mt-6 rounded-lg border border-green-200 bg-green-50 p-6">
-			<h2 class="mb-4 text-xl font-semibold text-green-800">Import Complete</h2>
+		<Card.Root class="mt-6 border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950">
+			<Card.Header>
+				<Card.Title class="text-green-800 dark:text-green-200">Import Complete</Card.Title>
+			</Card.Header>
+			<Card.Content>
+				<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+					<div class="rounded-md bg-card p-4 shadow-sm">
+						<p class="text-sm text-muted-foreground">Total Rows</p>
+						<p class="text-2xl font-bold">{form.totalRows}</p>
+					</div>
 
-			<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-				<div class="rounded-md bg-white p-4 shadow-sm">
-					<p class="text-sm text-gray-600">Total Rows</p>
-					<p class="text-2xl font-bold text-gray-900">{form.totalRows}</p>
+					<div class="rounded-md bg-card p-4 shadow-sm">
+						<p class="text-sm text-muted-foreground">Inserted</p>
+						<p class="text-2xl font-bold text-green-600 dark:text-green-400">{form.inserted}</p>
+					</div>
+
+					<div class="rounded-md bg-card p-4 shadow-sm">
+						<p class="text-sm text-muted-foreground">Updated</p>
+						<p class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{form.updated}</p>
+					</div>
+
+					<div class="rounded-md bg-card p-4 shadow-sm">
+						<p class="text-sm text-muted-foreground">Errors</p>
+						<p class="text-2xl font-bold text-destructive">{form.errors}</p>
+					</div>
 				</div>
 
-				<div class="rounded-md bg-white p-4 shadow-sm">
-					<p class="text-sm text-gray-600">Inserted</p>
-					<p class="text-2xl font-bold text-green-600">{form.inserted}</p>
-				</div>
+				{#if form.dateRange}
+					<div class="mt-4 rounded-md bg-card p-4 shadow-sm">
+						<p class="text-sm text-muted-foreground">Date Range</p>
+						<p class="text-lg font-semibold">
+							{formatDate(form.dateRange.from)} to {formatDate(form.dateRange.to)}
+						</p>
+					</div>
+				{/if}
 
-				<div class="rounded-md bg-white p-4 shadow-sm">
-					<p class="text-sm text-gray-600">Updated</p>
-					<p class="text-2xl font-bold text-yellow-600">{form.updated}</p>
-				</div>
-
-				<div class="rounded-md bg-white p-4 shadow-sm">
-					<p class="text-sm text-gray-600">Errors</p>
-					<p class="text-2xl font-bold text-red-600">{form.errors}</p>
-				</div>
-			</div>
-
-			{#if form.dateRange}
-				<div class="mt-4 rounded-md bg-white p-4 shadow-sm">
-					<p class="text-sm text-gray-600">Date Range</p>
-					<p class="text-lg font-semibold text-gray-900">
-						{formatDate(form.dateRange.from)} to {formatDate(form.dateRange.to)}
-					</p>
-				</div>
-			{/if}
-
-			{#if form.parseErrors && form.parseErrors.length > 0}
-				<div class="mt-4 rounded-md bg-white p-4 shadow-sm">
-					<p class="mb-2 text-sm font-medium text-gray-700">Parse Errors:</p>
-					<ul class="space-y-1 text-sm text-red-600">
-						{#each form.parseErrors as error, i (i)}
-							<li>Line {error.line}: {error.error}</li>
-						{/each}
-					</ul>
-				</div>
-			{/if}
-		</div>
+				{#if form.parseErrors && form.parseErrors.length > 0}
+					<div class="mt-4 rounded-md bg-card p-4 shadow-sm">
+						<p class="mb-2 text-sm font-medium">Parse Errors:</p>
+						<ul class="space-y-1 text-sm text-destructive">
+							{#each form.parseErrors as error, i (i)}
+								<li>Line {error.line}: {error.error}</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+			</Card.Content>
+		</Card.Root>
 	{/if}
 </div>

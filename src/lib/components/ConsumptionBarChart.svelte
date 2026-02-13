@@ -47,14 +47,15 @@
 
 	const cumulativeTotal = $derived(data.reduce((sum: number, v) => sum + (v ?? 0), 0));
 
-	const maxValue = $derived(
-		Math.max(
+	const maxValue = $derived.by(() => {
+		const values = [
 			...data.filter((v) => v !== null),
 			...(comparisonData?.filter((v) => v !== null) ?? []),
 			targetLine && showTarget ? targetLine : 0,
 			targetLine && showCumulative ? cumulativeTotal : 0
-		) * 1.1
-	);
+		];
+		return (values.length > 0 ? Math.max(...values) : 10) * 1.1;
+	});
 </script>
 
 {#if browser}

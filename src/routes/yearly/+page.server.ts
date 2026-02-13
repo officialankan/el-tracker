@@ -6,7 +6,8 @@ import { getCurrentYear, getYearMonths, getMonthDateRange } from "$lib/utils/dat
 
 export const load: PageServerLoad = async ({ url }) => {
 	const currentYear = getCurrentYear();
-	const year = parseInt(url.searchParams.get("year") ?? String(currentYear));
+	let year = parseInt(url.searchParams.get("year") ?? String(currentYear));
+	if (isNaN(year)) year = currentYear;
 
 	const months = getYearMonths(year);
 
@@ -101,7 +102,8 @@ export const load: PageServerLoad = async ({ url }) => {
 	// Parse comparison param (default to previous year)
 	const compareParam = url.searchParams.get("compare");
 	const hasCustomCompare = compareParam !== null;
-	const compareYear = hasCustomCompare ? parseInt(compareParam) : year - 1;
+	let compareYear = hasCustomCompare ? parseInt(compareParam) : year - 1;
+	if (isNaN(compareYear)) compareYear = year - 1;
 
 	// Previous year stats (always the actual previous year for stats)
 	const prevYear = year - 1;

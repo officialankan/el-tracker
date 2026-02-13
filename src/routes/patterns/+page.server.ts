@@ -51,7 +51,8 @@ export const load: PageServerLoad = async ({ url }) => {
 	const monthOfYearValues = Array.from({ length: 12 }, (_, i) => monthMap.get(i + 1) ?? null);
 
 	// Heatmap data — aggregate daily totals, optionally limited by months param
-	const months = parseInt(url.searchParams.get("months") ?? "3");
+	let months = parseInt(url.searchParams.get("months") ?? "3");
+	if (isNaN(months) || months <= 0) months = 3;
 	const cutoffDate = new Date();
 	cutoffDate.setMonth(cutoffDate.getMonth() - months);
 	const cutoffStr = cutoffDate.toISOString().split("T")[0];

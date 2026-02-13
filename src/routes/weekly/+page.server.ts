@@ -7,16 +7,20 @@ import { getCurrentWeek, getWeekDateRange, navigateWeek } from "$lib/utils/date-
 export const load: PageServerLoad = async ({ url }) => {
 	// Get week from URL params or default to current week
 	const current = getCurrentWeek();
-	const year = parseInt(url.searchParams.get("year") ?? String(current.year));
-	const week = parseInt(url.searchParams.get("week") ?? String(current.week));
+	let year = parseInt(url.searchParams.get("year") ?? String(current.year));
+	let week = parseInt(url.searchParams.get("week") ?? String(current.week));
+	if (isNaN(year)) year = current.year;
+	if (isNaN(week)) week = current.week;
 
 	// Parse comparison params (default to previous week)
 	const previousWeek = navigateWeek(year, week, -1);
 	const compareYearParam = url.searchParams.get("compare_year");
 	const compareWeekParam = url.searchParams.get("compare_week");
 	const hasCustomCompare = compareYearParam !== null && compareWeekParam !== null;
-	const compareYear = hasCustomCompare ? parseInt(compareYearParam) : previousWeek.year;
-	const compareWeek = hasCustomCompare ? parseInt(compareWeekParam) : previousWeek.week;
+	let compareYear = hasCustomCompare ? parseInt(compareYearParam) : previousWeek.year;
+	let compareWeek = hasCustomCompare ? parseInt(compareWeekParam) : previousWeek.week;
+	if (isNaN(compareYear)) compareYear = previousWeek.year;
+	if (isNaN(compareWeek)) compareWeek = previousWeek.week;
 
 	// Get date range for the week (Monday to Sunday)
 	const weekDates = getWeekDateRange(year, week);

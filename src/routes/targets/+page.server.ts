@@ -59,11 +59,15 @@ export const actions = {
 			return fail(400, { error: "Invalid date." });
 		}
 
-		await db.insert(targets).values({
-			periodType,
-			kwhTarget,
-			validFrom
-		});
+		try {
+			await db.insert(targets).values({
+				periodType,
+				kwhTarget,
+				validFrom
+			});
+		} catch {
+			return fail(500, { error: "Failed to create target. Please try again." });
+		}
 
 		return { success: true };
 	},
@@ -76,7 +80,11 @@ export const actions = {
 			return fail(400, { error: "Invalid target ID." });
 		}
 
-		await db.delete(targets).where(eq(targets.id, id));
+		try {
+			await db.delete(targets).where(eq(targets.id, id));
+		} catch {
+			return fail(500, { error: "Failed to delete target. Please try again." });
+		}
 
 		return { success: true };
 	}
