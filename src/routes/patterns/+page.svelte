@@ -26,6 +26,9 @@
 		"December"
 	];
 
+	const selectClass =
+		"rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none";
+
 	const hasData = $derived(
 		data.dayOfWeek.values.some((v) => v !== null) ||
 			data.monthOfYear.values.some((v) => v !== null) ||
@@ -42,9 +45,31 @@
 		return "Aggregated insights across all your consumption data";
 	});
 
+	const showComparison = $derived(data.compare !== null);
+
+	const comparisonLabel = $derived.by(() => {
+		if (!data.compare) return "";
+		if (data.compare.period === "month" && data.compare.year && data.compare.month) {
+			return `${monthNames[data.compare.month - 1]} ${data.compare.year}`;
+		}
+		if (data.compare.period === "year" && data.compare.year) {
+			return String(data.compare.year);
+		}
+		return "All time";
+	});
+
 	function buildUrl(params: Record<string, string>) {
 		const sp = new URLSearchParams(params);
 		return `/patterns?${sp.toString()}`;
+	}
+
+	/** Build current primary params as a record (to preserve when changing comparison) */
+	function primaryParams(): Record<string, string> {
+		const params: Record<string, string> = {};
+		if (data.period !== "all") params.period = data.period;
+		if (data.year) params.year = String(data.year);
+		if (data.month) params.month = String(data.month);
+		return params;
 	}
 
 	function onPeriodChange(e: Event) {
@@ -75,6 +100,57 @@
 		const year = data.year ?? data.availableYears[data.availableYears.length - 1];
 		goto(resolve(buildUrl({ period: "month", year: String(year), month })));
 	}
+
+	function enableComparison() {
+		const params = primaryParams();
+		// Default comparison to "all"
+		params.compare_period = "all";
+		goto(resolve(buildUrl(params)));
+	}
+
+	function clearComparison() {
+		goto(resolve(buildUrl(primaryParams())));
+	}
+
+	function onComparePeriodChange(e: Event) {
+		const value = (e.target as HTMLSelectElement).value;
+		const params = primaryParams();
+		if (value === "all") {
+			params.compare_period = "all";
+		} else if (value === "year") {
+			const year = data.compare?.year ?? data.availableYears[data.availableYears.length - 1];
+			params.compare_period = "year";
+			params.compare_year = String(year);
+		} else if (value === "month") {
+			const year = data.compare?.year ?? data.availableYears[data.availableYears.length - 1];
+			const month = data.compare?.month ?? new Date().getMonth() + 1;
+			params.compare_period = "month";
+			params.compare_year = String(year);
+			params.compare_month = String(month);
+		}
+		goto(resolve(buildUrl(params)));
+	}
+
+	function onCompareYearChange(e: Event) {
+		const year = (e.target as HTMLSelectElement).value;
+		const params = primaryParams();
+		params.compare_period = data.compare!.period;
+		params.compare_year = year;
+		if (data.compare!.period === "month" && data.compare!.month) {
+			params.compare_month = String(data.compare!.month);
+		}
+		goto(resolve(buildUrl(params)));
+	}
+
+	function onCompareMonthChange(e: Event) {
+		const month = (e.target as HTMLSelectElement).value;
+		const params = primaryParams();
+		const year = data.compare?.year ?? data.availableYears[data.availableYears.length - 1];
+		params.compare_period = "month";
+		params.compare_year = String(year);
+		params.compare_month = month;
+		goto(resolve(buildUrl(params)));
+	}
 </script>
 
 <div class="container mx-auto space-y-6 p-6">
@@ -87,39 +163,67 @@
 	</div>
 
 	<!-- Period filter -->
-	<div class="flex flex-wrap items-center gap-3">
-		<select
-			class="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-			value={data.period}
-			onchange={onPeriodChange}
-		>
-			<option value="all">All time</option>
-			<option value="year">Year</option>
-			<option value="month">Month</option>
-		</select>
-
-		{#if data.period === "year" || data.period === "month"}
-			<select
-				class="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-				value={data.year}
-				onchange={onYearChange}
-			>
-				{#each data.availableYears as y (y)}
-					<option value={y}>{y}</option>
-				{/each}
+	<div class="space-y-3">
+		<div class="flex flex-wrap items-center gap-3">
+			<select class={selectClass} value={data.period} onchange={onPeriodChange}>
+				<option value="all">All time</option>
+				<option value="year">Year</option>
+				<option value="month">Month</option>
 			</select>
-		{/if}
 
-		{#if data.period === "month"}
-			<select
-				class="rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
-				value={data.month}
-				onchange={onMonthChange}
-			>
-				{#each monthNames as name, i (i)}
-					<option value={i + 1}>{name}</option>
-				{/each}
-			</select>
+			{#if data.period === "year" || data.period === "month"}
+				<select class={selectClass} value={data.year} onchange={onYearChange}>
+					{#each data.availableYears as y (y)}
+						<option value={y}>{y}</option>
+					{/each}
+				</select>
+			{/if}
+
+			{#if data.period === "month"}
+				<select class={selectClass} value={data.month} onchange={onMonthChange}>
+					{#each monthNames as name, i (i)}
+						<option value={i + 1}>{name}</option>
+					{/each}
+				</select>
+			{/if}
+
+			{#if !showComparison}
+				<Button variant="outline" size="sm" onclick={enableComparison}>Compare with...</Button>
+			{/if}
+		</div>
+
+		{#if showComparison}
+			<div class="flex flex-wrap items-center gap-3">
+				<span class="text-sm font-medium text-muted-foreground">vs.</span>
+
+				<select
+					class={selectClass}
+					value={data.compare?.period ?? "all"}
+					onchange={onComparePeriodChange}
+				>
+					<option value="all">All time</option>
+					<option value="year">Year</option>
+					<option value="month">Month</option>
+				</select>
+
+				{#if data.compare?.period === "year" || data.compare?.period === "month"}
+					<select class={selectClass} value={data.compare?.year} onchange={onCompareYearChange}>
+						{#each data.availableYears as y (y)}
+							<option value={y}>{y}</option>
+						{/each}
+					</select>
+				{/if}
+
+				{#if data.compare?.period === "month"}
+					<select class={selectClass} value={data.compare?.month} onchange={onCompareMonthChange}>
+						{#each monthNames as name, i (i)}
+							<option value={i + 1}>{name}</option>
+						{/each}
+					</select>
+				{/if}
+
+				<Button variant="ghost" size="sm" onclick={clearComparison}>Clear</Button>
+			</div>
 		{/if}
 	</div>
 
@@ -143,6 +247,8 @@
 					labels={data.dayOfWeek.labels}
 					data={data.dayOfWeek.values}
 					yLabel="Avg kWh"
+					comparisonData={data.comparisonDayOfWeek ?? undefined}
+					comparisonLabel={comparisonLabel || undefined}
 				/>
 			</Card.Content>
 		</Card.Root>
@@ -158,6 +264,8 @@
 					labels={data.monthOfYear.labels}
 					data={data.monthOfYear.values}
 					yLabel="Avg kWh"
+					comparisonData={data.comparisonMonthOfYear ?? undefined}
+					comparisonLabel={comparisonLabel || undefined}
 				/>
 			</Card.Content>
 		</Card.Root>

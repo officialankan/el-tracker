@@ -1,13 +1,87 @@
 import type { PageServerLoad } from "./$types";
 import { db } from "$lib/server/db";
 import { consumption } from "$lib/server/db/schema";
-import { and, gte, lt, sql } from "drizzle-orm";
+import { and, gte, lt, sql, type SQL } from "drizzle-orm";
+
+function buildPeriodFilter(
+	period: string,
+	yearParam: number,
+	monthParam: number,
+	minYear: number,
+	maxYear: number
+): { filter: SQL | undefined; validYear: boolean; validMonth: boolean } {
+	const validYear = !isNaN(yearParam) && yearParam >= minYear && yearParam <= maxYear;
+	const validMonth = !isNaN(monthParam) && monthParam >= 1 && monthParam <= 12;
+
+	let startDate: string | null = null;
+	let endDate: string | null = null;
+
+	if (period === "year" && validYear) {
+		startDate = `${yearParam}-01-01T00:00:00`;
+		endDate = `${yearParam + 1}-01-01T00:00:00`;
+	} else if (period === "month" && validYear && validMonth) {
+		const mm = String(monthParam).padStart(2, "0");
+		startDate = `${yearParam}-${mm}-01T00:00:00`;
+		if (monthParam === 12) {
+			endDate = `${yearParam + 1}-01-01T00:00:00`;
+		} else {
+			const nextMm = String(monthParam + 1).padStart(2, "0");
+			endDate = `${yearParam}-${nextMm}-01T00:00:00`;
+		}
+	}
+
+	const filter =
+		startDate && endDate
+			? and(gte(consumption.timestamp, startDate), lt(consumption.timestamp, endDate))
+			: undefined;
+
+	return { filter, validYear, validMonth };
+}
+
+async function queryDayOfWeek(periodFilter: SQL | undefined) {
+	const dowData = await db
+		.select({
+			dow: sql<number>`cast(strftime('%w', ${consumption.timestamp}) as integer)`,
+			avgKwh: sql<number>`AVG(${consumption.kwh})`
+		})
+		.from(consumption)
+		.where(periodFilter)
+		.groupBy(sql`strftime('%w', ${consumption.timestamp})`)
+		.orderBy(sql`strftime('%w', ${consumption.timestamp})`);
+
+	const dowMap = new Map<number, number>();
+	dowData.forEach((row) => dowMap.set(row.dow, row.avgKwh));
+
+	const dayOfWeekOrder = [1, 2, 3, 4, 5, 6, 0];
+	return dayOfWeekOrder.map((dow) => dowMap.get(dow) ?? null);
+}
+
+async function queryMonthOfYear(periodFilter: SQL | undefined) {
+	const monthData = await db
+		.select({
+			month: sql<number>`cast(strftime('%m', ${consumption.timestamp}) as integer)`,
+			avgKwh: sql<number>`AVG(${consumption.kwh})`
+		})
+		.from(consumption)
+		.where(periodFilter)
+		.groupBy(sql`strftime('%m', ${consumption.timestamp})`)
+		.orderBy(sql`strftime('%m', ${consumption.timestamp})`);
+
+	const monthMap = new Map<number, number>();
+	monthData.forEach((row) => monthMap.set(row.month, row.avgKwh));
+	return Array.from({ length: 12 }, (_, i) => monthMap.get(i + 1) ?? null);
+}
 
 export const load: PageServerLoad = async ({ url }) => {
 	// Read period filter params
 	const period = url.searchParams.get("period") ?? "all";
 	const yearParam = parseInt(url.searchParams.get("year") ?? "");
 	const monthParam = parseInt(url.searchParams.get("month") ?? "");
+
+	// Read comparison params
+	const comparePeriod = url.searchParams.get("compare_period");
+	const compareYearParam = parseInt(url.searchParams.get("compare_year") ?? "");
+	const compareMonthParam = parseInt(url.searchParams.get("compare_month") ?? "");
 
 	// Query available years from data
 	const yearRange = await db
@@ -21,67 +95,16 @@ export const load: PageServerLoad = async ({ url }) => {
 	const maxYear = yearRange[0]?.maxYear ?? new Date().getFullYear();
 	const availableYears = Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i);
 
-	// Build date range filter based on period
-	let startDate: string | null = null;
-	let endDate: string | null = null;
-	const validYear = !isNaN(yearParam) && yearParam >= minYear && yearParam <= maxYear;
-
-	if (period === "year" && validYear) {
-		startDate = `${yearParam}-01-01T00:00:00`;
-		endDate = `${yearParam + 1}-01-01T00:00:00`;
-	} else if (
-		period === "month" &&
-		validYear &&
-		!isNaN(monthParam) &&
-		monthParam >= 1 &&
-		monthParam <= 12
-	) {
-		const mm = String(monthParam).padStart(2, "0");
-		startDate = `${yearParam}-${mm}-01T00:00:00`;
-		// Next month
-		if (monthParam === 12) {
-			endDate = `${yearParam + 1}-01-01T00:00:00`;
-		} else {
-			const nextMm = String(monthParam + 1).padStart(2, "0");
-			endDate = `${yearParam}-${nextMm}-01T00:00:00`;
-		}
-	}
-
-	const periodFilter =
-		startDate && endDate
-			? and(gte(consumption.timestamp, startDate), lt(consumption.timestamp, endDate))
-			: undefined;
-
-	// Day-of-week averages (SQLite %w: 0=Sun..6=Sat → reorder to Mon–Sun)
-	const dowData = await db
-		.select({
-			dow: sql<number>`cast(strftime('%w', ${consumption.timestamp}) as integer)`,
-			avgKwh: sql<number>`AVG(${consumption.kwh})`
-		})
-		.from(consumption)
-		.where(periodFilter)
-		.groupBy(sql`strftime('%w', ${consumption.timestamp})`)
-		.orderBy(sql`strftime('%w', ${consumption.timestamp})`);
-
-	// Map 0=Sun..6=Sat → Mon–Sun order
-	const dowMap = new Map<number, number>();
-	dowData.forEach((row) => dowMap.set(row.dow, row.avgKwh));
+	// Build primary period filter
+	const { filter: periodFilter, validYear } = buildPeriodFilter(
+		period,
+		yearParam,
+		monthParam,
+		minYear,
+		maxYear
+	);
 
 	const dayOfWeekLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-	const dayOfWeekOrder = [1, 2, 3, 4, 5, 6, 0]; // Mon=1..Sat=6, Sun=0
-	const dayOfWeekValues = dayOfWeekOrder.map((dow) => dowMap.get(dow) ?? null);
-
-	// Month-of-year averages
-	const monthData = await db
-		.select({
-			month: sql<number>`cast(strftime('%m', ${consumption.timestamp}) as integer)`,
-			avgKwh: sql<number>`AVG(${consumption.kwh})`
-		})
-		.from(consumption)
-		.where(periodFilter)
-		.groupBy(sql`strftime('%m', ${consumption.timestamp})`)
-		.orderBy(sql`strftime('%m', ${consumption.timestamp})`);
-
 	const monthLabels = [
 		"Jan",
 		"Feb",
@@ -96,12 +119,49 @@ export const load: PageServerLoad = async ({ url }) => {
 		"Nov",
 		"Dec"
 	];
-	const monthMap = new Map<number, number>();
-	monthData.forEach((row) => monthMap.set(row.month, row.avgKwh));
-	const monthOfYearValues = Array.from({ length: 12 }, (_, i) => monthMap.get(i + 1) ?? null);
 
-	// Heatmap data — when period filter is active, show all data in that period;
-	// otherwise use the months param for "All time" mode
+	// Run primary queries
+	const [dayOfWeekValues, monthOfYearValues] = await Promise.all([
+		queryDayOfWeek(periodFilter),
+		queryMonthOfYear(periodFilter)
+	]);
+
+	// Build comparison data if requested
+	let comparisonDayOfWeek: (number | null)[] | null = null;
+	let comparisonMonthOfYear: (number | null)[] | null = null;
+	let compare: { period: string; year: number | null; month: number | null } | null = null;
+
+	if (
+		comparePeriod &&
+		(comparePeriod === "all" || comparePeriod === "year" || comparePeriod === "month")
+	) {
+		const { filter: compareFilter, validYear: compareValidYear } = buildPeriodFilter(
+			comparePeriod,
+			compareYearParam,
+			compareMonthParam,
+			minYear,
+			maxYear
+		);
+
+		// Only run comparison if the filter is valid (or "all" which has no filter)
+		if (compareFilter || comparePeriod === "all") {
+			[comparisonDayOfWeek, comparisonMonthOfYear] = await Promise.all([
+				queryDayOfWeek(compareFilter),
+				queryMonthOfYear(compareFilter)
+			]);
+
+			compare = {
+				period: comparePeriod,
+				year: compareValidYear ? compareYearParam : null,
+				month:
+					!isNaN(compareMonthParam) && compareMonthParam >= 1 && compareMonthParam <= 12
+						? compareMonthParam
+						: null
+			};
+		}
+	}
+
+	// Heatmap data — single period only
 	let heatmapFilter = periodFilter;
 	let months = 3;
 
@@ -133,6 +193,9 @@ export const load: PageServerLoad = async ({ url }) => {
 			labels: monthLabels,
 			values: monthOfYearValues
 		},
+		comparisonDayOfWeek,
+		comparisonMonthOfYear,
+		compare,
 		heatmap: heatmapData.map((row) => ({ date: row.date, kwh: row.kwh })),
 		months,
 		period: periodFilter ? period : "all",
