@@ -102,6 +102,7 @@
 					average={data.stats.average}
 					peakDay={data.stats.peakDay}
 					rollingAverage={data.stats.rollingAverage}
+					rollingAverageDescription="The average total consumption over the previous 3 years (excluding the current year)."
 					previousTotal={data.stats.previousTotal}
 					percentChange={data.stats.percentChange}
 					target={showTarget ? data.target : null}
