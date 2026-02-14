@@ -66,25 +66,31 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		navigateMonth(prevMonth.year, prevMonth.month, -1).month,
 		-1
 	);
-	const rollingStartDate = getMonthDateRange(threeMonthsAgo.year, threeMonthsAgo.month)[0];
-	const rollingEndDates = getMonthDateRange(prevMonth.year, prevMonth.month);
-	const rollingEndDate = rollingEndDates[rollingEndDates.length - 1];
 
-	const rollingData = await db
-		.select({
-			total: sql<number>`SUM(${consumption.kwh})`
-		})
-		.from(consumption)
-		.where(
-			and(
-				eq(consumption.resourceType, resource),
-				gte(consumption.timestamp, `${rollingStartDate}T00:00:00`),
-				lte(consumption.timestamp, `${rollingEndDate}T23:59:59`)
-			)
-		);
-
-	const rollingTotal = rollingData[0]?.total ?? 0;
-	const rollingAverage = rollingTotal / 3;
+	let rollingTotal = 0;
+	let monthsWithData = 0;
+	let rollingMonth = { year: threeMonthsAgo.year, month: threeMonthsAgo.month };
+	for (let i = 0; i < 3; i++) {
+		const monthDates = getMonthDateRange(rollingMonth.year, rollingMonth.month);
+		const result = await db
+			.select({
+				total: sql<number>`SUM(${consumption.kwh})`
+			})
+			.from(consumption)
+			.where(
+				and(
+					eq(consumption.resourceType, resource),
+					gte(consumption.timestamp, `${monthDates[0]}T00:00:00`),
+					lte(consumption.timestamp, `${monthDates[monthDates.length - 1]}T23:59:59`)
+				)
+			);
+		if (result[0]?.total != null) {
+			rollingTotal += result[0].total;
+			monthsWithData++;
+		}
+		rollingMonth = navigateMonth(rollingMonth.year, rollingMonth.month, 1);
+	}
+	const rollingAverage = monthsWithData > 0 ? rollingTotal / monthsWithData : 0;
 
 	// Parse comparison params (default to previous month)
 	const compareYearParam = url.searchParams.get("compare_year");

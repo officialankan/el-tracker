@@ -70,24 +70,31 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	// Calculate rolling 4-week average (excluding current week)
 	const fourWeeksAgo = navigateWeek(previousWeek.year, previousWeek.week, -3);
-	const rollingStartDate = getWeekDateRange(fourWeeksAgo.year, fourWeeksAgo.week)[0];
-	const rollingEndDate = getWeekDateRange(previousWeek.year, previousWeek.week)[6];
 
-	const rollingData = await db
-		.select({
-			total: sql<number>`SUM(${consumption.kwh})`
-		})
-		.from(consumption)
-		.where(
-			and(
-				eq(consumption.resourceType, resource),
-				gte(consumption.timestamp, `${rollingStartDate}T00:00:00`),
-				lte(consumption.timestamp, `${rollingEndDate}T23:59:59`)
-			)
-		);
-
-	const rollingTotal = rollingData[0]?.total ?? 0;
-	const rollingAverage = rollingTotal / 4;
+	let rollingTotal = 0;
+	let weeksWithData = 0;
+	let rollingWeek = { year: fourWeeksAgo.year, week: fourWeeksAgo.week };
+	for (let i = 0; i < 4; i++) {
+		const weekDates = getWeekDateRange(rollingWeek.year, rollingWeek.week);
+		const result = await db
+			.select({
+				total: sql<number>`SUM(${consumption.kwh})`
+			})
+			.from(consumption)
+			.where(
+				and(
+					eq(consumption.resourceType, resource),
+					gte(consumption.timestamp, `${weekDates[0]}T00:00:00`),
+					lte(consumption.timestamp, `${weekDates[6]}T23:59:59`)
+				)
+			);
+		if (result[0]?.total != null) {
+			rollingTotal += result[0].total;
+			weeksWithData++;
+		}
+		rollingWeek = navigateWeek(rollingWeek.year, rollingWeek.week, 1);
+	}
+	const rollingAverage = weeksWithData > 0 ? rollingTotal / weeksWithData : 0;
 
 	// Calculate previous week stats (always the actual previous week for stats)
 	const prevWeekDates = getWeekDateRange(previousWeek.year, previousWeek.week);
