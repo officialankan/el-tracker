@@ -26,14 +26,19 @@
 			{/if}
 			<span class="hidden sm:inline">{config.label}</span>
 		</a>
-		{#each config.navLinks as link (link.href)}
-			<Button
-				href={link.href}
-				variant={page.url.pathname.startsWith(link.href) ? "secondary" : "ghost"}
-				size="sm"
-			>
-				{link.title}
-			</Button>
+		{#each config.navLinks as group, i (i)}
+			{#if i > 0}
+				<div class="mx-1.5 h-5 w-[2px] bg-muted-foreground/40"></div>
+			{/if}
+			{#each group as link (link.href)}
+				<Button
+					href={link.href}
+					variant={page.url.pathname.startsWith(link.href) ? "secondary" : "ghost"}
+					size="sm"
+				>
+					{link.title}
+				</Button>
+			{/each}
 		{/each}
 
 		<form method="POST" action="/resource" class="ml-auto">
