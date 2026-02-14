@@ -13,7 +13,8 @@ const allNavLinks = [
 	{ title: "Månad", href: "/monthly" },
 	{ title: "År", href: "/yearly" },
 	{ title: "Mönster", href: "/patterns" },
-	{ title: "Mål", href: "/targets" }
+	{ title: "Mål", href: "/targets" },
+	{ title: "Kostnad", href: "/cost" }
 ];
 
 export const RESOURCE_CONFIG: Record<ResourceType, ResourceConfig> = {
