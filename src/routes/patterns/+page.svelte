@@ -3,6 +3,7 @@
 	import ConsumptionBarChart from "$lib/components/ConsumptionBarChart.svelte";
 	import HeatmapChart from "$lib/components/HeatmapChart.svelte";
 	import * as Card from "$lib/components/ui/card";
+	import * as Tabs from "$lib/components/ui/tabs";
 	import { Button } from "$lib/components/ui/button";
 	import { TrendingUp } from "@lucide/svelte";
 	import { goto } from "$app/navigation";
@@ -49,8 +50,6 @@
 		return "Aggregated insights across all your consumption data";
 	});
 
-	const showComparison = $derived(data.compare !== null);
-
 	const comparisonLabel = $derived.by(() => {
 		if (!data.compare) return "";
 		if (data.compare.period === "month" && data.compare.year && data.compare.month) {
@@ -67,53 +66,82 @@
 		return `/patterns?${sp.toString()}`;
 	}
 
-	/** Build current primary params as a record (to preserve when changing comparison) */
+	/** Build current primary params as a record (preserving tab) */
 	function primaryParams(): Record<string, string> {
 		const params: Record<string, string> = {};
+		if (data.tab === "compare") params.tab = "compare";
 		if (data.period !== "all") params.period = data.period;
 		if (data.year) params.year = String(data.year);
 		if (data.month) params.month = String(data.month);
 		return params;
 	}
 
+	function onTabChange(tab: string) {
+		const params: Record<string, string> = {};
+		if (tab === "compare") {
+			params.tab = "compare";
+			// Default comparison to "all" when switching to compare tab
+			params.compare_period = "all";
+		}
+		if (data.period !== "all") params.period = data.period;
+		if (data.year) params.year = String(data.year);
+		if (data.month) params.month = String(data.month);
+		goto(resolve(buildUrl(params)));
+	}
+
 	function onPeriodChange(e: Event) {
 		const value = (e.target as HTMLSelectElement).value;
+		const params: Record<string, string> = {};
+		if (data.tab === "compare") {
+			params.tab = "compare";
+			// Preserve comparison params
+			if (data.compare) {
+				params.compare_period = data.compare.period;
+				if (data.compare.year) params.compare_year = String(data.compare.year);
+				if (data.compare.month) params.compare_month = String(data.compare.month);
+			} else {
+				params.compare_period = "all";
+			}
+		}
 		if (value === "all") {
-			goto(resolve("/patterns"));
+			goto(resolve(buildUrl(params)));
 		} else if (value === "year") {
 			const year = data.year ?? data.availableYears[data.availableYears.length - 1];
-			goto(resolve(buildUrl({ period: "year", year: String(year) })));
+			goto(resolve(buildUrl({ ...params, period: "year", year: String(year) })));
 		} else if (value === "month") {
 			const year = data.year ?? data.availableYears[data.availableYears.length - 1];
 			const month = data.month ?? new Date().getMonth() + 1;
-			goto(resolve(buildUrl({ period: "month", year: String(year), month: String(month) })));
+			goto(
+				resolve(buildUrl({ ...params, period: "month", year: String(year), month: String(month) }))
+			);
 		}
 	}
 
 	function onYearChange(e: Event) {
 		const year = (e.target as HTMLSelectElement).value;
+		const params = primaryParams();
+		if (data.compare) {
+			params.compare_period = data.compare.period;
+			if (data.compare.year) params.compare_year = String(data.compare.year);
+			if (data.compare.month) params.compare_month = String(data.compare.month);
+		}
 		if (data.period === "month" && data.month) {
-			goto(resolve(buildUrl({ period: "month", year, month: String(data.month) })));
+			goto(resolve(buildUrl({ ...params, period: "month", year, month: String(data.month) })));
 		} else {
-			goto(resolve(buildUrl({ period: "year", year })));
+			goto(resolve(buildUrl({ ...params, period: "year", year })));
 		}
 	}
 
 	function onMonthChange(e: Event) {
 		const month = (e.target as HTMLSelectElement).value;
 		const year = data.year ?? data.availableYears[data.availableYears.length - 1];
-		goto(resolve(buildUrl({ period: "month", year: String(year), month })));
-	}
-
-	function enableComparison() {
 		const params = primaryParams();
-		// Default comparison to "all"
-		params.compare_period = "all";
-		goto(resolve(buildUrl(params)));
-	}
-
-	function clearComparison() {
-		goto(resolve(buildUrl(primaryParams())));
+		if (data.compare) {
+			params.compare_period = data.compare.period;
+			if (data.compare.year) params.compare_year = String(data.compare.year);
+			if (data.compare.month) params.compare_month = String(data.compare.month);
+		}
+		goto(resolve(buildUrl({ ...params, period: "month", year: String(year), month })));
 	}
 
 	function onComparePeriodChange(e: Event) {
@@ -157,6 +185,64 @@
 	}
 </script>
 
+{#snippet periodFilter()}
+	<div class="flex flex-wrap items-center gap-3">
+		<select class={selectClass} value={data.period} onchange={onPeriodChange}>
+			<option value="all">All time</option>
+			<option value="year">Year</option>
+			<option value="month">Month</option>
+		</select>
+
+		{#if data.period === "year" || data.period === "month"}
+			<select class={selectClass} value={data.year} onchange={onYearChange}>
+				{#each data.availableYears as y (y)}
+					<option value={y}>{y}</option>
+				{/each}
+			</select>
+		{/if}
+
+		{#if data.period === "month"}
+			<select class={selectClass} value={data.month} onchange={onMonthChange}>
+				{#each monthNames as name, i (i)}
+					<option value={i + 1}>{name}</option>
+				{/each}
+			</select>
+		{/if}
+	</div>
+{/snippet}
+
+{#snippet comparisonFilter()}
+	<div class="flex flex-wrap items-center gap-3">
+		<span class="text-sm font-medium text-muted-foreground">vs.</span>
+
+		<select
+			class={selectClass}
+			value={data.compare?.period ?? "all"}
+			onchange={onComparePeriodChange}
+		>
+			<option value="all">All time</option>
+			<option value="year">Year</option>
+			<option value="month">Month</option>
+		</select>
+
+		{#if data.compare?.period === "year" || data.compare?.period === "month"}
+			<select class={selectClass} value={data.compare?.year} onchange={onCompareYearChange}>
+				{#each data.availableYears as y (y)}
+					<option value={y}>{y}</option>
+				{/each}
+			</select>
+		{/if}
+
+		{#if data.compare?.period === "month"}
+			<select class={selectClass} value={data.compare?.month} onchange={onCompareMonthChange}>
+				{#each monthNames as name, i (i)}
+					<option value={i + 1}>{name}</option>
+				{/each}
+			</select>
+		{/if}
+	</div>
+{/snippet}
+
 <div class="container mx-auto space-y-6 p-6">
 	<div>
 		<div class="flex items-center gap-2">
@@ -164,71 +250,6 @@
 			<h1 class="text-3xl font-bold">Consumption Patterns</h1>
 		</div>
 		<p class="text-muted-foreground">{subtitle}</p>
-	</div>
-
-	<!-- Period filter -->
-	<div class="space-y-3">
-		<div class="flex flex-wrap items-center gap-3">
-			<select class={selectClass} value={data.period} onchange={onPeriodChange}>
-				<option value="all">All time</option>
-				<option value="year">Year</option>
-				<option value="month">Month</option>
-			</select>
-
-			{#if data.period === "year" || data.period === "month"}
-				<select class={selectClass} value={data.year} onchange={onYearChange}>
-					{#each data.availableYears as y (y)}
-						<option value={y}>{y}</option>
-					{/each}
-				</select>
-			{/if}
-
-			{#if data.period === "month"}
-				<select class={selectClass} value={data.month} onchange={onMonthChange}>
-					{#each monthNames as name, i (i)}
-						<option value={i + 1}>{name}</option>
-					{/each}
-				</select>
-			{/if}
-
-			{#if !showComparison}
-				<Button variant="outline" size="sm" onclick={enableComparison}>Compare with...</Button>
-			{/if}
-		</div>
-
-		{#if showComparison}
-			<div class="flex flex-wrap items-center gap-3">
-				<span class="text-sm font-medium text-muted-foreground">vs.</span>
-
-				<select
-					class={selectClass}
-					value={data.compare?.period ?? "all"}
-					onchange={onComparePeriodChange}
-				>
-					<option value="all">All time</option>
-					<option value="year">Year</option>
-					<option value="month">Month</option>
-				</select>
-
-				{#if data.compare?.period === "year" || data.compare?.period === "month"}
-					<select class={selectClass} value={data.compare?.year} onchange={onCompareYearChange}>
-						{#each data.availableYears as y (y)}
-							<option value={y}>{y}</option>
-						{/each}
-					</select>
-				{/if}
-
-				{#if data.compare?.period === "month"}
-					<select class={selectClass} value={data.compare?.month} onchange={onCompareMonthChange}>
-						{#each monthNames as name, i (i)}
-							<option value={i + 1}>{name}</option>
-						{/each}
-					</select>
-				{/if}
-
-				<Button variant="ghost" size="sm" onclick={clearComparison}>Clear</Button>
-			</div>
-		{/if}
 	</div>
 
 	{#if !hasData}
@@ -240,77 +261,128 @@
 			</p>
 		</div>
 	{:else}
-		<!-- Day-of-week averages (hidden for water) -->
-		{#if showDayOfWeek}
-			<Card.Root>
-				<Card.Header>
-					<Card.Title>Average by Day of Week</Card.Title>
-					<Card.Description>Average hourly consumption for each day of the week</Card.Description>
-				</Card.Header>
-				<Card.Content>
-					<ConsumptionBarChart
-						labels={data.dayOfWeek.labels}
-						data={data.dayOfWeek.values}
-						yLabel="Avg {config.unit}"
-						comparisonData={data.comparisonDayOfWeek ?? undefined}
-						comparisonLabel={comparisonLabel || undefined}
-					/>
-				</Card.Content>
-			</Card.Root>
-		{/if}
+		<Tabs.Root value={data.tab} onValueChange={onTabChange}>
+			<Tabs.List>
+				<Tabs.Trigger value="patterns">Patterns</Tabs.Trigger>
+				<Tabs.Trigger value="compare">Compare</Tabs.Trigger>
+			</Tabs.List>
 
-		<!-- Month-of-year averages -->
-		<Card.Root>
-			<Card.Header>
-				<Card.Title>Average by Month</Card.Title>
-				<Card.Description>Average hourly consumption for each month of the year</Card.Description>
-			</Card.Header>
-			<Card.Content>
-				<ConsumptionBarChart
-					labels={data.monthOfYear.labels}
-					data={data.monthOfYear.values}
-					yLabel="Avg {config.unit}"
-					comparisonData={data.comparisonMonthOfYear ?? undefined}
-					comparisonLabel={comparisonLabel || undefined}
-				/>
-			</Card.Content>
-		</Card.Root>
+			<Tabs.Content value="patterns" class="space-y-6 pt-4">
+				{@render periodFilter()}
 
-		<!-- Calendar heatmap -->
-		<Card.Root>
-			<Card.Header>
-				<div class="flex items-center justify-between">
-					<div>
-						<Card.Title>Daily Consumption Heatmap</Card.Title>
-						<Card.Description>
+				{#if showDayOfWeek}
+					<Card.Root>
+						<Card.Header>
+							<Card.Title>Average by Day of Week</Card.Title>
+							<Card.Description
+								>Average hourly consumption for each day of the week</Card.Description
+							>
+						</Card.Header>
+						<Card.Content>
+							<ConsumptionBarChart
+								labels={data.dayOfWeek.labels}
+								data={data.dayOfWeek.values}
+								yLabel="Avg {config.unit}"
+							/>
+						</Card.Content>
+					</Card.Root>
+				{/if}
+
+				<Card.Root>
+					<Card.Header>
+						<Card.Title>Average by Month</Card.Title>
+						<Card.Description
+							>Average hourly consumption for each month of the year</Card.Description
+						>
+					</Card.Header>
+					<Card.Content>
+						<ConsumptionBarChart
+							labels={data.monthOfYear.labels}
+							data={data.monthOfYear.values}
+							yLabel="Avg {config.unit}"
+						/>
+					</Card.Content>
+				</Card.Root>
+
+				<Card.Root>
+					<Card.Header>
+						<div class="flex items-center justify-between">
+							<div>
+								<Card.Title>Daily Consumption Heatmap</Card.Title>
+								<Card.Description>
+									{#if data.period === "all"}
+										Daily total consumption over the last {data.months} months
+									{:else if data.period === "year"}
+										Daily total consumption for {data.year}
+									{:else}
+										Daily total consumption for {monthNames[(data.month ?? 1) - 1]} {data.year}
+									{/if}
+								</Card.Description>
+							</div>
 							{#if data.period === "all"}
-								Daily total consumption over the last {data.months} months
-							{:else if data.period === "year"}
-								Daily total consumption for {data.year}
-							{:else}
-								Daily total consumption for {monthNames[(data.month ?? 1) - 1]} {data.year}
+								<div class="flex gap-1">
+									{#each monthsOptions as m (m)}
+										<Button
+											variant={data.months === m ? "secondary" : "ghost"}
+											size="sm"
+											href="/patterns?months={m}"
+											data-sveltekit-noscroll
+										>
+											{m}mo
+										</Button>
+									{/each}
+								</div>
 							{/if}
-						</Card.Description>
-					</div>
-					{#if data.period === "all"}
-						<div class="flex gap-1">
-							{#each monthsOptions as m (m)}
-								<Button
-									variant={data.months === m ? "secondary" : "ghost"}
-									size="sm"
-									href="/patterns?months={m}"
-									data-sveltekit-noscroll
-								>
-									{m}mo
-								</Button>
-							{/each}
 						</div>
-					{/if}
-				</div>
-			</Card.Header>
-			<Card.Content>
-				<HeatmapChart data={data.heatmap} unit={config.unit} />
-			</Card.Content>
-		</Card.Root>
+					</Card.Header>
+					<Card.Content>
+						<HeatmapChart data={data.heatmap} unit={config.unit} />
+					</Card.Content>
+				</Card.Root>
+			</Tabs.Content>
+
+			<Tabs.Content value="compare" class="space-y-6 pt-4">
+				{@render periodFilter()}
+				{@render comparisonFilter()}
+
+				{#if showDayOfWeek}
+					<Card.Root>
+						<Card.Header>
+							<Card.Title>Average by Day of Week</Card.Title>
+							<Card.Description
+								>Average hourly consumption for each day of the week</Card.Description
+							>
+						</Card.Header>
+						<Card.Content>
+							<ConsumptionBarChart
+								labels={data.dayOfWeek.labels}
+								data={data.dayOfWeek.values}
+								yLabel="Avg {config.unit}"
+								comparisonData={data.comparisonDayOfWeek ?? undefined}
+								comparisonLabel={comparisonLabel || undefined}
+							/>
+						</Card.Content>
+					</Card.Root>
+				{/if}
+
+				<Card.Root>
+					<Card.Header>
+						<Card.Title>Average by Month</Card.Title>
+						<Card.Description
+							>Average hourly consumption for each month of the year</Card.Description
+						>
+					</Card.Header>
+					<Card.Content>
+						<ConsumptionBarChart
+							labels={data.monthOfYear.labels}
+							data={data.monthOfYear.values}
+							yLabel="Avg {config.unit}"
+							comparisonData={data.comparisonMonthOfYear ?? undefined}
+							comparisonLabel={comparisonLabel || undefined}
+						/>
+					</Card.Content>
+				</Card.Root>
+			</Tabs.Content>
+		</Tabs.Root>
 	{/if}
 </div>

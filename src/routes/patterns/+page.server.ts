@@ -83,13 +83,17 @@ async function queryMonthOfYear(periodFilter: SQL | undefined) {
 export const load: PageServerLoad = async ({ url, locals }) => {
 	const resource = locals.resource;
 
+	// Read tab param
+	const tab = url.searchParams.get("tab") === "compare" ? "compare" : "patterns";
+
 	// Read period filter params
 	const period = url.searchParams.get("period") ?? "all";
 	const yearParam = parseInt(url.searchParams.get("year") ?? "");
 	const monthParam = parseInt(url.searchParams.get("month") ?? "");
 
-	// Read comparison params
-	const comparePeriod = url.searchParams.get("compare_period");
+	// Read comparison params (only relevant on compare tab)
+	const comparePeriod =
+		tab === "compare" ? (url.searchParams.get("compare_period") ?? "all") : null;
 	const compareYearParam = parseInt(url.searchParams.get("compare_year") ?? "");
 	const compareMonthParam = parseInt(url.searchParams.get("compare_month") ?? "");
 
@@ -203,6 +207,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		.orderBy(sql`substr(${consumption.timestamp}, 1, 10)`);
 
 	return {
+		tab,
 		dayOfWeek: {
 			labels: dayOfWeekLabels,
 			values: dayOfWeekValues
