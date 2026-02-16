@@ -5,9 +5,9 @@
 	import { Textarea } from "$lib/components/ui/textarea";
 	import * as Card from "$lib/components/ui/card";
 	import { RESOURCE_CONFIG, type ResourceType } from "$lib/resource";
-	import type { ActionData } from "./$types";
+	import type { ActionData, PageData } from "./$types";
 
-	let { form }: { form: ActionData } = $props();
+	let { form, data }: { form: ActionData; data: PageData } = $props();
 
 	const resource = $derived(page.data.resource as ResourceType);
 	const config = $derived(RESOURCE_CONFIG[resource]);
@@ -162,4 +162,17 @@
 			</Card.Content>
 		</Card.Root>
 	{/if}
+
+	<div class="mt-6 rounded-lg border bg-muted/50 p-4">
+		<h2 class="mb-2 text-sm font-medium text-muted-foreground">Latest imported dates</h2>
+		{#if data.latestDates.length > 0}
+			<ul class="space-y-1 text-sm">
+				{#each data.latestDates as date (date)}
+					<li>{date}</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="text-sm text-muted-foreground">No data imported yet</p>
+		{/if}
+	</div>
 </div>

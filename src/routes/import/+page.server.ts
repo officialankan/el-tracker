@@ -1,10 +1,26 @@
-import type { Actions } from "./$types";
-import { and, eq } from "drizzle-orm";
+import type { Actions, PageServerLoad } from "./$types";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "$lib/server/db";
 import { consumption } from "$lib/server/db/schema";
 import { parseConsumptionCSV, parsePastedConsumption } from "$lib/utils/csv-parser";
 import type { ParseResult } from "$lib/utils/csv-parser";
 import { fail } from "@sveltejs/kit";
+
+export const load: PageServerLoad = async ({ locals }) => {
+	const resource = locals.resource;
+	const dateColumn = sql<string>`substr(${consumption.timestamp}, 1, 10)`.as("date");
+
+	const rows = await db
+		.selectDistinct({ date: dateColumn })
+		.from(consumption)
+		.where(eq(consumption.resourceType, resource))
+		.orderBy(desc(dateColumn))
+		.limit(5);
+
+	return {
+		latestDates: rows.map((r) => r.date)
+	};
+};
 
 async function insertRows(parseResult: ParseResult) {
 	let inserted = 0;
