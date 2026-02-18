@@ -23,4 +23,4 @@
 - [x] add a feature that lets the user calculate electricy bill cost. this can be a new page/view. show the current month stats card and then let the user type in a price (SEK) per kWh, then display the cost of the current cumulative consumption and also the projected cost based on the projection.
 - [x] currently, i think the rolling average includes zeros for missing dates within the window size. this means the it is a bit odd to compare against, so we shouldnt include those zeros (where dates have no data) in the rolling average calculation.
 - [x] on the import page, show the 5 latest dates already imported
-- [ ] on the import page, add a feature that let's the user detect missing dates within the database
+- [x] on the import page, add a feature that let's the user detect missing dates within the database

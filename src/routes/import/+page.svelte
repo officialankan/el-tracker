@@ -163,16 +163,44 @@
 		</Card.Root>
 	{/if}
 
-	<div class="mt-6 rounded-lg border bg-muted/50 p-4">
-		<h2 class="mb-2 text-sm font-medium text-muted-foreground">Latest imported dates</h2>
-		{#if data.latestDates.length > 0}
-			<ul class="space-y-1 text-sm">
-				{#each data.latestDates as date (date)}
-					<li>{date}</li>
-				{/each}
-			</ul>
-		{:else}
-			<p class="text-sm text-muted-foreground">No data imported yet</p>
-		{/if}
+	<div class="mt-6 grid gap-4 sm:grid-cols-2">
+		<div class="rounded-lg border bg-muted/50 p-4">
+			<h2 class="mb-2 text-sm font-medium text-muted-foreground">Latest imported dates</h2>
+			{#if data.latestDates.length > 0}
+				<ul class="space-y-1 text-xs">
+					{#each data.latestDates as date (date)}
+						<li>{date}</li>
+					{/each}
+				</ul>
+			{:else}
+				<p class="text-sm text-muted-foreground">No data imported yet</p>
+			{/if}
+		</div>
+
+		<div class="rounded-lg border bg-muted/50 p-4">
+			<h2 class="mb-2 text-sm font-medium text-muted-foreground">Missing dates</h2>
+			<Button href="?gaps=1" data-sveltekit-noscroll variant="outline" size="sm">
+				Check for missing dates
+			</Button>
+			{#if data.gapsChecked}
+				<div class="mt-3">
+					{#if data.gaps.length === 0}
+						<p class="text-sm text-green-600 dark:text-green-400">✓ No missing dates found</p>
+					{:else}
+						<ul class="space-y-1 text-sm">
+							{#each data.gaps as gap (gap.start)}
+								<li>
+									{#if gap.start === gap.end}
+										{gap.start} (1 day)
+									{:else}
+										{gap.start} – {gap.end} ({gap.days} days)
+									{/if}
+								</li>
+							{/each}
+						</ul>
+					{/if}
+				</div>
+			{/if}
+		</div>
 	</div>
 </div>

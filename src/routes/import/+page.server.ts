@@ -1,12 +1,14 @@
 import type { Actions, PageServerLoad } from "./$types";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "$lib/server/db";
 import { consumption } from "$lib/server/db/schema";
 import { parseConsumptionCSV, parsePastedConsumption } from "$lib/utils/csv-parser";
 import type { ParseResult } from "$lib/utils/csv-parser";
 import { fail } from "@sveltejs/kit";
+import { findDateGaps } from "$lib/utils/gaps";
+import type { DateGap } from "$lib/utils/gaps";
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const resource = locals.resource;
 	const dateColumn = sql<string>`substr(${consumption.timestamp}, 1, 10)`.as("date");
 
@@ -17,8 +19,21 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.orderBy(desc(dateColumn))
 		.limit(5);
 
+	const checkGaps = url.searchParams.has("gaps");
+	let gaps: DateGap[] = [];
+	if (checkGaps) {
+		const allDates = await db
+			.selectDistinct({ date: dateColumn })
+			.from(consumption)
+			.where(eq(consumption.resourceType, resource))
+			.orderBy(asc(dateColumn));
+		gaps = findDateGaps(allDates.map((r) => r.date));
+	}
+
 	return {
-		latestDates: rows.map((r) => r.date)
+		latestDates: rows.map((r) => r.date),
+		gaps,
+		gapsChecked: checkGaps
 	};
 };
 
