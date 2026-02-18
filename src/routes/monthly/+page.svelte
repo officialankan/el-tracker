@@ -88,12 +88,14 @@
 	{#if hasData}
 		<div class="grid gap-6 lg:grid-cols-2">
 			<div class="lg:col-span-2">
-				{#if data.target}
+				{#if data.target || resource === "water"}
 					<div class="mb-2 flex items-center gap-1">
-						<Toggle variant="outline" size="sm" bind:pressed={showTarget}>
-							<Target class="h-4 w-4" />
-							Target
-						</Toggle>
+						{#if data.target}
+							<Toggle variant="outline" size="sm" bind:pressed={showTarget}>
+								<Target class="h-4 w-4" />
+								Target
+							</Toggle>
+						{/if}
 						<Toggle variant="outline" size="sm" bind:pressed={showCumulative}>
 							<TrendingUp class="h-4 w-4" />
 							Cumulative
@@ -108,6 +110,7 @@
 					targetLine={data.target?.value}
 					{showTarget}
 					{showCumulative}
+					alwaysCumulative={resource === "water"}
 					yLabel="This Month"
 				/>
 			</div>

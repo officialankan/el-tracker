@@ -12,6 +12,7 @@
 		targetLine?: number;
 		showTarget?: boolean;
 		showCumulative?: boolean;
+		alwaysCumulative?: boolean;
 		xLabel?: string;
 		yLabel?: string;
 	}
@@ -24,6 +25,7 @@
 		targetLine,
 		showTarget = true,
 		showCumulative = true,
+		alwaysCumulative = false,
 		xLabel,
 		yLabel
 	}: Props = $props();
@@ -40,7 +42,10 @@
 				label,
 				value,
 				comparison: comparisonData?.[i] ?? null,
-				cumulative: targetLine != null && showCumulative && value != null ? cumSum : null
+				cumulative:
+					(alwaysCumulative || targetLine != null) && showCumulative && value != null
+						? cumSum
+						: null
 			};
 		});
 	});
@@ -52,7 +57,7 @@
 			...data.filter((v) => v !== null),
 			...(comparisonData?.filter((v) => v !== null) ?? []),
 			targetLine && showTarget ? targetLine : 0,
-			targetLine && showCumulative ? cumulativeTotal : 0
+			(alwaysCumulative || targetLine) && showCumulative ? cumulativeTotal : 0
 		];
 		return (values.length > 0 ? Math.max(...values) : 10) * 1.1;
 	});
@@ -77,7 +82,7 @@
 					rule
 				/>
 				<Axis placement="bottom" rule />
-				{#if targetLine && showCumulative}
+				{#if (alwaysCumulative || targetLine) && showCumulative}
 					<Area y1="cumulative" class="fill-primary/10 stroke-primary/40" />
 				{/if}
 				{#if targetLine && showTarget}

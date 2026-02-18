@@ -16,6 +16,9 @@
 - [ ] **test water tracking**: import a water CSV file, verify toggle switches between El/H2O modes,
       check that monthly/yearly/patterns views show liters, weekly redirects to monthly, targets work per resource,
       and day-of-week chart is hidden in patterns for water
+- [x] water consumption is recorded in 1000 L increments so individual daily bars are mostly zero with
+      occasional spikes. make cumulative the default view for water on monthly and yearly charts (without
+      requiring a target to be set). also show the Cumulative toggle for water so the user can turn it off.
 - [ ] in the patterns page when we select a specific month as a period, the plot "average by month" becomes irrelevant, so we should probably hide that if we are viewing a certain month.
 - [ ] like the TODO above, the heatmap becomes a bit weird when we select a certain month as a period since the heatmap looks hard-coded to display severals months. can we fix it so that it updates accordingly? like when we select a specific month as a period then the heatmap should show the data as it is currently, but use the full width etc and have the "x axis" update to only show that months weeks. **NOTE: attempted this but getting the CSS grid to truly fill the card width is tricky — percentage widths don't resolve correctly inside flex-1 items and aspect-ratio approaches didn't behave as expected. needs more investigation.**
 - [x] much like the TODO above, some graphs in the patterns page are a bit obsolete when using the comparing periods feature. maybe put the "compare with" feature in a separate tab inside the patterns page so that it becomes a bit cleaner.
