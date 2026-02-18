@@ -288,21 +288,23 @@
 					</Card.Root>
 				{/if}
 
-				<Card.Root>
-					<Card.Header>
-						<Card.Title>Average by Month</Card.Title>
-						<Card.Description
-							>Average hourly consumption for each month of the year</Card.Description
-						>
-					</Card.Header>
-					<Card.Content>
-						<ConsumptionBarChart
-							labels={data.monthOfYear.labels}
-							data={data.monthOfYear.values}
-							yLabel="Avg {config.unit}"
-						/>
-					</Card.Content>
-				</Card.Root>
+				{#if data.period !== "month"}
+					<Card.Root>
+						<Card.Header>
+							<Card.Title>Average by Month</Card.Title>
+							<Card.Description
+								>Average hourly consumption for each month of the year</Card.Description
+							>
+						</Card.Header>
+						<Card.Content>
+							<ConsumptionBarChart
+								labels={data.monthOfYear.labels}
+								data={data.monthOfYear.values}
+								yLabel="Avg {config.unit}"
+							/>
+						</Card.Content>
+					</Card.Root>
+				{/if}
 
 				<Card.Root>
 					<Card.Header>
@@ -365,23 +367,25 @@
 					</Card.Root>
 				{/if}
 
-				<Card.Root>
-					<Card.Header>
-						<Card.Title>Average by Month</Card.Title>
-						<Card.Description
-							>Average hourly consumption for each month of the year</Card.Description
-						>
-					</Card.Header>
-					<Card.Content>
-						<ConsumptionBarChart
-							labels={data.monthOfYear.labels}
-							data={data.monthOfYear.values}
-							yLabel="Avg {config.unit}"
-							comparisonData={data.comparisonMonthOfYear ?? undefined}
-							comparisonLabel={comparisonLabel || undefined}
-						/>
-					</Card.Content>
-				</Card.Root>
+				{#if data.period !== "month"}
+					<Card.Root>
+						<Card.Header>
+							<Card.Title>Average by Month</Card.Title>
+							<Card.Description
+								>Average hourly consumption for each month of the year</Card.Description
+							>
+						</Card.Header>
+						<Card.Content>
+							<ConsumptionBarChart
+								labels={data.monthOfYear.labels}
+								data={data.monthOfYear.values}
+								yLabel="Avg {config.unit}"
+								comparisonData={data.comparisonMonthOfYear ?? undefined}
+								comparisonLabel={comparisonLabel || undefined}
+							/>
+						</Card.Content>
+					</Card.Root>
+				{/if}
 			</Tabs.Content>
 		</Tabs.Root>
 	{/if}
