@@ -38,4 +38,15 @@ pnpm db:studio      # Open Drizzle Studio to inspect the database
 pnpm check          # Type checking
 pnpm lint           # Lint + format check
 pnpm format         # Auto-format
+pnpm test           # Run unit tests (watch mode)
+pnpm test:run       # Run unit tests once
 ```
+
+## Tests
+
+Unit tests live in `tests/` and are run with [Vitest](https://vitest.dev/). They cover the core utility modules:
+
+- **csv-parser** — CSV parsing, Swedish decimal handling, error cases
+- **date-utils** — ISO week calculations, navigation, date range formatting
+- **format** — kWh, percentage, and number formatting
+- **gaps** — detecting missing days in a consumption dataset

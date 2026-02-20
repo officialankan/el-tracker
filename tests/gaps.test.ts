@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { findDateGaps } from "./gaps";
+import { findDateGaps } from "$lib/utils/gaps";
 
 describe("findDateGaps", () => {
 	it("returns empty array for empty input", () => {

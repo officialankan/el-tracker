@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatKWh, formatPercent, formatNumber } from "./format";
+import { formatKWh, formatPercent, formatNumber } from "$lib/utils/format";
 
 describe("format", () => {
 	describe("formatKWh", () => {

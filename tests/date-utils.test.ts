@@ -7,7 +7,7 @@ import {
 	getCurrentWeek,
 	navigateWeek,
 	formatDayOfWeek
-} from "./date-utils";
+} from "$lib/utils/date-utils";
 
 describe("date-utils", () => {
 	describe("getISOWeek", () => {
