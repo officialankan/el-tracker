@@ -1,42 +1,41 @@
-# sv
+# el-tracker
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A local-only electricity consumption tracker for Swedish household data. No authentication, no cloud — runs entirely on your machine.
 
-## Creating a project
+Designed for data from Swedish electricity providers — import via CSV file upload or by pasting directly from the clipboard.
 
-If you're seeing this, you've probably already done this step. Congrats!
+> [!NOTE]
+> This project was developed with AI assistance and is tailored specifically to data from a single Swedish electricity provider. It may not work out of the box with data from other providers.
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Setup
 
-To recreate this project with the same configuration:
+**Prerequisites:** Node.js, pnpm
 
 ```sh
-# recreate this project
-pnpm dlx sv create --template minimal --types ts --add prettier eslint tailwindcss="plugins:typography,forms" drizzle="database:sqlite+sqlite:better-sqlite3" mcp="ide:claude-code+setup:remote" --install pnpm el-tracker
+pnpm install
+pnpm db:push        # Initialize the SQLite database
+pnpm dev            # Start the dev server at http://localhost:5173
 ```
 
-## Developing
+## Importing data
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Go to `/import` and either upload your provider's CSV export or paste the data directly. Expected format:
+
+```
+Datum	El kWh
+2026-02-04 00:00 (ons)	4,472
+```
+
+Duplicate rows are silently ignored — safe to re-import the same file.
+
+## Commands
 
 ```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+pnpm dev            # Dev server
+pnpm build          # Production build
+pnpm preview        # Preview production build
+pnpm db:studio      # Open Drizzle Studio to inspect the database
+pnpm check          # Type checking
+pnpm lint           # Lint + format check
+pnpm format         # Auto-format
 ```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
